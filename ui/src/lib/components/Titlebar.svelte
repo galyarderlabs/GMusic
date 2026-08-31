@@ -141,46 +141,46 @@
 	class="relative {ui.theaterOpen ? 'z-0' : 'z-50'} flex h-9 shrink-0 select-none items-center justify-between border-b border-border/60 bg-background"
 >
 	<span
-		class="pointer-events-none absolute inset-x-0 text-center text-xs font-medium tracking-wide text-muted-foreground"
+		class="pointer-events-none absolute inset-x-0 text-center text-xs font-semibold tracking-wide text-muted-foreground/80"
 	>
-		Limusic
+		GMusic
 	</span>
 
 	<div class="flex h-full items-center">
 		<!-- pointer-events-none: the logo is decoration; clicks on it should drag the window. -->
-		<img src={logo} alt="" class="pointer-events-none ml-3 mr-1 h-4 w-4" />
+		<img src={logo} alt="" class="pointer-events-none ml-3 mr-1.5 h-4 w-4 rounded-sm object-contain" />
 		<!-- Bigger and heavier than the icons on the right: these are navigation, and at their
 		     weight the arrow read as decoration and got missed. -->
 		<button
-			class="flex h-full w-9 items-center justify-center text-foreground/80 transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
+			class="flex h-full w-8 items-center justify-center text-foreground/80 transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
 			onclick={() => history.back()}
 			disabled={depth === 0}
 			title={t('common.back')}
 			aria-label={t('common.back')}
 		>
-			<HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2.5} class="h-5 w-5" />
+			<HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2.5} class="h-4 w-4" />
 		</button>
 		<button
-			class="flex h-full w-9 items-center justify-center text-foreground/80 transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
+			class="flex h-full w-8 items-center justify-center text-foreground/80 transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
 			onclick={() => history.forward()}
 			disabled={depth === deepest}
 			title={t('common.forward')}
 			aria-label={t('common.forward')}
 		>
-			<HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.5} class="h-5 w-5" />
+			<HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.5} class="h-4 w-4" />
 		</button>
 	</div>
 
-	<div class="flex h-full items-center">
+	<div class="flex h-full items-center pr-1.5">
 		<!-- Account first, then the integrations, then the window controls. The drag region lives on
 		     <header> only, so these children are ordinary buttons — don't add the attribute here. -->
 		<AccountMenu />
-		<div class="mx-1.5 h-4 w-px bg-border"></div>
+		<div class="mx-1.5 h-4 w-px bg-border/60"></div>
 
 		<!-- Paste a YouTube Music link and go to it: the only way into a playlist that is shared by
 		     link and never appears in search or the library (#63). -->
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
 			onclick={() => (ui.linkOpen = true)}
 			title={t('dialogs.link.title')}
 			aria-label={t('dialogs.link.title')}
@@ -190,7 +190,7 @@
 
 		<!-- Opens the same modal as the home hero's button (one dialog, mounted in +layout). -->
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {lt.role !==
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {lt.role !==
 			'none'
 				? 'text-primary'
 				: ''}"
@@ -214,7 +214,7 @@
 		</button>
 
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {discordOn
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {discordOn
 				? 'text-foreground'
 				: ''}"
 			onclick={toggleDiscord}
@@ -233,7 +233,7 @@
 		</button>
 
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {connected
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground {connected
 				? 'text-foreground'
 				: ''}"
 			onclick={onScrobblerClick}
@@ -263,7 +263,7 @@
 		     the pair are the same idea in opposite directions (shrink the app / become the screen),
 		     and disabled with nothing playing, since there'd be nothing to show. -->
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-25"
 			onclick={() => (ui.theaterOpen = true)}
 			disabled={!playback.now}
 			title={t('player.theater_mode')}
@@ -276,7 +276,7 @@
 		     It sits with the integrations rather than the window controls because it swaps what
 		     you're using, not the size of this window. -->
 		<button
-			class="flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+			class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
 			onclick={openMiniPlayer}
 			title={t('a11y.toggle_mini')}
 			aria-label={t('a11y.toggle_mini')}
@@ -284,29 +284,35 @@
 			<HugeiconsIcon icon={MinimizeScreenIcon} class="h-4 w-4" />
 		</button>
 
-		<div class="mx-1.5 h-4 w-px bg-border"></div>
+		<div class="mx-2 h-4 w-px bg-border/60"></div>
 
-		<button
-			class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
-			onclick={() => win.minimize()}
-			aria-label={t('common.minimize')}
-		>
-			<HugeiconsIcon icon={MinusSignIcon} class="h-4 w-4" />
-		</button>
-		<button
-			class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
-			onclick={() => win.toggleMaximize()}
-			aria-label={t('common.maximize')}
-		>
-			<HugeiconsIcon icon={SquareIcon} class="h-3.5 w-3.5" />
-		</button>
-		<button
-			class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:text-destructive"
-			onclick={() => win.close()}
-			aria-label={t('common.close')}
-		>
-			<HugeiconsIcon icon={Cancel01Icon} class="h-4 w-4" />
-		</button>
+		<!-- Native-like GTK Adwaita window buttons -->
+		<div class="flex items-center gap-1">
+			<button
+				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground"
+				onclick={() => win.minimize()}
+				title={t('common.minimize')}
+				aria-label={t('common.minimize')}
+			>
+				<HugeiconsIcon icon={MinusSignIcon} class="h-3 w-3" />
+			</button>
+			<button
+				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground"
+				onclick={() => win.toggleMaximize()}
+				title={t('common.maximize')}
+				aria-label={t('common.maximize')}
+			>
+				<HugeiconsIcon icon={SquareIcon} class="h-2.5 w-2.5" />
+			</button>
+			<button
+				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-red-500 hover:text-white"
+				onclick={() => win.close()}
+				title={t('common.close')}
+				aria-label={t('common.close')}
+			>
+				<HugeiconsIcon icon={Cancel01Icon} class="h-3 w-3" />
+			</button>
+		</div>
 	</div>
 </header>
 

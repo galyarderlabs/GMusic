@@ -1,0 +1,95 @@
+name: Build Desktop (Linux)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release Tag (e.g. v0.6.5)'
+        required: true
+        default: 'v0.6.5'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux .deb & .AppImage (x86_64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js & pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: 'ui/pnpm-lock.yaml'
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libmpv-dev \
+            libasound2-dev \
+            libssl-dev \
+            pkg-config \
+            build-essential \
+            curl \
+            wget \
+            file
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            src-tauri
+
+      - name: Install UI dependencies & build
+        run: |
+          cd ui
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Build Tauri Desktop (.deb & .AppImage)
+        run: |
+          cargo install tauri-cli --version "^2.0.0" --locked || true
+          cargo tauri build --bundles deb,appimage
+
+      - name: Prepare Release Artifacts
+        id: prepare_assets
+        run: |
+          mkdir -p dist-release
+          find src-tauri/target/release/bundle/deb/ -name "*.deb" -exec cp {} dist-release/ \;
+          find src-tauri/target/release/bundle/appimage/ -name "*.AppImage" -exec cp {} dist-release/ \;
+          ls -la dist-release/
+
+      - name: Publish or Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          echo "Publishing release $TAG..."
+          # Create release if it doesn't exist
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" dist-release/* \
+              --title "GMusic $TAG" \
+              --notes "GMusic $TAG — Native Linux Desktop Release (.deb & .AppImage)"
+          else
+            gh release upload "$TAG" dist-release/* --clobber
+          fi
