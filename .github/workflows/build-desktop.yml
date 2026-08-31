@@ -78,8 +78,10 @@ jobs:
         id: prepare_assets
         run: |
           mkdir -p dist-release
-          find src-tauri/target/release/bundle/deb/ -name "*.deb" -exec cp {} dist-release/ \;
-          find src-tauri/target/release/bundle/appimage/ -name "*.AppImage" -exec cp {} dist-release/ \;
+          find target/release/bundle/ -name "*.deb" -exec cp {} dist-release/ \; 2>/dev/null || true
+          find target/release/bundle/ -name "*.AppImage" -exec cp {} dist-release/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/ -name "*.deb" -exec cp {} dist-release/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/ -name "*.AppImage" -exec cp {} dist-release/ \; 2>/dev/null || true
           ls -la dist-release/
 
       - name: Publish or Update GitHub Release

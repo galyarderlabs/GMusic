@@ -36,8 +36,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "rpm", "appimage"],
-    "createUpdaterArtifacts": true,
+    "targets": ["deb", "appimage"],
+    "createUpdaterArtifacts": false,
     "icon": [
       "icons/icon.png",
       "icons/32x32.png",
@@ -53,20 +53,6 @@
     "linux": {
       "deb": {
         "depends": ["libwebkit2gtk-4.1-0", "libmpv2", "libc6 (>= 2.39)"]
-      },
-      "rpm": {
-        "depends": ["libappindicator-gtk3", "mpv-libs"]
-      }
-    }
-  },
-  "plugins": {
-    "updater": {
-      "endpoints": [
-        "https://github.com/SimoHypers/limusic/releases/latest/download/latest.json"
-      ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk0MENDMzA1NUFGMDI0NTQKUldSVUpQQmFCY01NbENPbW9XOTRvVU9YQ2lCQytOU2RyeDhHNFhkWHlNc1dITkFmbkd1ZTBlM1gK",
-      "windows": {
-        "installMode": "passive"
       }
     }
   }
