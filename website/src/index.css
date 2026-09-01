@@ -5,27 +5,26 @@
 /* Limusic app theme (default, dark) — tokens copied from ui/src/routes/layout.css .dark block.
    The site is dark-only. */
 :root {
-  --background: oklch(0.145 0.008 326);
+  --background: oklch(0.12 0.02 280);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.212 0.019 322.12);
+  --card: oklch(0.18 0.02 280 / 50%);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.212 0.019 322.12);
+  --popover: oklch(0.18 0.02 280 / 80%);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.455 0.188 13.697);
-  --primary-foreground: oklch(0.969 0.015 12.422);
-  --secondary: oklch(0.274 0.006 286.033);
+  --primary: oklch(0.60 0.22 330);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.25 0.03 270 / 60%);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.263 0.024 320.12);
-  --muted-foreground: oklch(0.711 0.019 323.02);
-  --accent: oklch(0.455 0.188 13.697);
-  --accent-foreground: oklch(0.969 0.015 12.422);
+  --muted: oklch(0.22 0.02 280 / 60%);
+  --muted-foreground: oklch(0.72 0.02 280);
+  --accent: oklch(0.55 0.20 310);
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.542 0.034 322.5);
-  --radius: 0.45rem;
-  /* the brighter crimson the app uses for active/play accents */
-  --primary-bright: oklch(0.645 0.246 16.439);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.60 0.22 330);
+  --radius: 1.25rem;
+  --primary-bright: oklch(0.68 0.25 335);
 }
 
 @theme inline {
@@ -62,17 +61,56 @@
   }
   html {
     scroll-behavior: smooth;
+    background-color: var(--background);
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary-bright/30 selection:text-white min-h-screen relative;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(139, 28, 92, 0.25) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(76, 29, 149, 0.3) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(190, 24, 93, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(88, 28, 135, 0.25) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(157, 23, 77, 0.2) 0px, transparent 50%);
+    background-attachment: fixed;
   }
   button {
     cursor: pointer;
   }
 }
 
+/* Liquid Glass utilities */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+              inset 1.5px 1.5px 0.5px 0 rgba(255, 255, 255, 0.35),
+              inset -1px -1px 0.5px 0.5px rgba(255, 255, 255, 0.08);
+}
+
+.glass-dock {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4),
+              inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+              inset -1px -1px 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes floatGlow {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.5; }
+  50% { transform: translateY(-20px) scale(1.08); opacity: 0.8; }
+}
+
+.animate-float-glow {
+  animation: floatGlow 10s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .animate-float-glow {
+    animation: none;
   }
 }

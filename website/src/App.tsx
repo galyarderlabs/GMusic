@@ -1,3 +1,4 @@
+
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   MusicNote01Icon,
@@ -14,17 +15,19 @@ import {
   WindowsOldIcon,
   Apple01Icon,
   GithubIcon,
-  PlayIcon,
+
   StarIcon,
   SourceCodeIcon,
+  Download01Icon,
+  SparklesIcon,
 } from '@hugeicons/core-free-icons'
 
 import Aurora from '@/components/Aurora'
 import SplitText from '@/components/SplitText'
 import AnimatedContent from '@/components/AnimatedContent'
 import FadeContent from '@/components/FadeContent'
-import SpotlightCard from '@/components/SpotlightCard'
-import { useGitHub, detectOS, REPO_URL, RELEASES_URL } from '@/lib/github'
+import { GlassCard, GlassButton, GlassBadge, GlassFilter } from '@/components/LiquidGlass'
+import { useGitHub, detectOS, REPO_URL, RELEASES_URL, type RepoInfo } from '@/lib/github'
 
 import logo from '@/assets/logo.png'
 import homeImg from '@/assets/home.png'
@@ -33,185 +36,231 @@ import lyricsImg from '@/assets/lyrics.png'
 import browseImg from '@/assets/browse.png'
 import togetherImg from '@/assets/together.png'
 
-const SPOTLIGHT = 'rgba(229, 72, 110, 0.16)' as const
-
 const FEATURES = [
   {
     icon: MusicNote01Icon,
-    title: 'No ads, ever',
-    body: 'GMusic plays the audio stream directly, so there is nothing to interrupt. No ad breaks, no premium subscription.',
+    title: 'Zero Ads, Pure Flow',
+    body: 'GMusic streams direct audio with no interruptions. No video ads, no sponsored breaks, and no premium subscription needed.',
+    highlight: 'Ad-free',
   },
   {
     icon: DashboardSpeed01Icon,
-    title: 'Light on your PC',
-    body: 'A native Rust core instead of a bundled browser. Opens fast, sips memory, and keeps your fans quiet.',
+    title: 'Native Rust Speed',
+    body: 'Built with a native Rust core and Tauri 2 instead of an Electron browser. Opens in milliseconds and runs whisper-quiet.',
+    highlight: 'Lightweight',
   },
   {
     icon: AudioWave01Icon,
-    title: 'Gapless, tuned sound',
-    body: 'mpv-powered audio with gapless playback, loudness normalization, and a built-in equalizer.',
+    title: 'Lossless & Gapless',
+    body: 'Powered by libmpv for pristine audio fidelity, seamless gapless track transitions, and intelligent loudness normalization.',
+    highlight: 'libmpv audio',
   },
   {
     icon: QuoteDownIcon,
-    title: 'Lyrics that follow along',
-    body: 'Time-synced lyrics scroll with the song, line by line — perfect for singing along.',
+    title: 'Realtime Synced Lyrics',
+    body: 'Line-by-line & word-by-word synced karaoke lyrics via LRCLIB and Boidu. Sings along with every beat.',
+    highlight: 'Synced LRCLIB',
   },
   {
     icon: UserMultiple02Icon,
     title: 'Listen Together',
-    body: 'Host a session, share an invite code, and play music in perfect sync with friends.',
+    body: 'Host collaborative listening rooms with end-to-end sync. One invite link lets friends tune in simultaneously.',
+    highlight: 'Real-time Sync',
   },
   {
     icon: LibraryIcon,
-    title: 'Your library, intact',
-    body: 'Sign in once and your playlists, likes, albums and subscriptions are all there. Changes sync back to YouTube Music.',
+    title: 'Your Full Library',
+    body: 'Seamless YouTube Music sync. Sign in securely once to access your playlists, liked songs, history, and artist mix.',
+    highlight: 'Cloud Synced',
   },
 ]
 
 const EXTRAS = [
-  { icon: KeyboardIcon, label: 'Media keys' },
-  { icon: LastFmIcon, label: 'Last.fm scrobbling' },
-  { icon: Moon02Icon, label: 'Themes' },
-  { icon: RefreshIcon, label: 'Auto-updates' },
+  { icon: KeyboardIcon, label: 'Global Media Keys' },
+  { icon: LastFmIcon, label: 'Last.fm Scrobbler' },
+  { icon: Moon02Icon, label: 'Liquid Glass Themes' },
+  { icon: SparklesIcon, label: 'Discord Rich Presence' },
+  { icon: RefreshIcon, label: 'Instant Auto-Updates' },
 ]
 
 const SCREENS = [
   {
     eyebrow: 'Interface',
-    title: 'Clean, native, fast',
-    body: 'A fluid, modern interface built with Svelte 5. Explore your library, customize your theme, and enjoy smooth playback without browser bloat.',
+    title: 'Translucent, Native, Fluid',
+    body: 'An ultra-refined desktop experience built with Svelte 5 and the Liquid Glass theme engine. Rich artwork washes and tactile specular details.',
     img: homeImg,
     alt: 'GMusic home interface',
+    badge: 'Desktop UI',
   },
   {
     eyebrow: 'Mini Player',
-    title: 'Compact & always within reach',
-    body: 'Switch to a sleek mini player to keep your controls and album artwork accessible while multitasking.',
+    title: 'Compact & Floating Workspace',
+    body: 'Dockable mini-player overlay with quick-scrub controls, live queue glance, and zero-distraction ambient cover view.',
     img: miniplayerImg,
     alt: 'GMusic mini player mode',
+    badge: 'Mini Mode',
   },
   {
     eyebrow: 'Lyrics',
-    title: 'Sing every word',
-    body: 'Synced lyrics stay locked to the music. The current line lights up and the rest fades back, so you never lose your place.',
+    title: 'Live Synced Typography',
+    body: 'Lyrics lock in sync with the audio track. Active lines illuminate with frosted specular glows while background lines gently recede.',
     img: lyricsImg,
     alt: 'GMusic showing time-synced lyrics',
+    badge: 'Karaoke View',
   },
   {
-    eyebrow: 'Browse',
-    title: 'Go down the rabbit hole',
-    body: 'Artists, albums, singles, moods and mixes — the full YouTube Music catalog in a fast native window, with search that feels instant.',
+    eyebrow: 'Explore',
+    title: 'Unlimited Music Universe',
+    body: 'Explore millions of artists, albums, community playlists, and mood mixes in a blazing fast native window.',
     img: browseImg,
     alt: 'Browse and search in GMusic',
+    badge: 'Catalog',
   },
   {
-    eyebrow: 'Together',
-    title: 'Press play with friends',
-    body: 'Start a Listen Together session and send one invite code. Every play, skip and queue change stays in sync for everyone.',
+    eyebrow: 'Social',
+    title: 'Sync Audio with Friends',
+    body: 'Listen Together rooms keep volume, seek positions, and track queues synchronized across all participants instantly.',
     img: togetherImg,
     alt: 'The Listen Together dialog in GMusic',
+    badge: 'Multiplayer',
   },
 ]
 
 function Nav({ stars }: { stars: number | null }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-background/70 backdrop-blur-md">
-      <nav className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <a href="#" className="flex items-center gap-2.5 font-semibold tracking-wide">
-          <img src={logo} alt="" className="size-6" />
-          GMusic
+    <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4 pointer-events-none">
+      <nav className="glass-dock pointer-events-auto flex items-center justify-between gap-4 sm:gap-8 rounded-full px-5 py-2.5 max-w-4xl w-full">
+        <a href="#" className="flex items-center gap-3 font-semibold tracking-wide text-foreground group">
+          <img
+            src={logo}
+            alt="GMusic logo"
+            className="size-7 object-contain transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-[0_2px_8px_rgba(229,72,110,0.5)]"
+          />
+          <span className="font-heading text-lg font-bold text-white tracking-tight">
+            GMusic
+          </span>
         </a>
-        <div className="ml-auto hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-          <a href="#features" className="transition-colors hover:text-foreground">Features</a>
-          <a href="#screens" className="transition-colors hover:text-foreground">Screens</a>
-          <a href="#download" className="transition-colors hover:text-foreground">Download</a>
+
+        <div className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
+          <a href="#features" className="transition-colors hover:text-white">
+            Features
+          </a>
+          <a href="#screens" className="transition-colors hover:text-white">
+            Showcase
+          </a>
+          <a href="#download" className="transition-colors hover:text-white">
+            Download
+          </a>
         </div>
-        <a
-          href={REPO_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="ml-auto flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground sm:ml-0"
-        >
-          <HugeiconsIcon icon={GithubIcon} size={16} strokeWidth={2} />
-          <span className="hidden sm:inline">GitHub</span>
-          {stars !== null && (
-            <span className="flex items-center gap-1 text-xs">
-              <HugeiconsIcon icon={StarIcon} size={12} strokeWidth={2} />
-              {stars}
-            </span>
-          )}
-        </a>
+
+        <div className="flex items-center gap-3">
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="group flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-300 text-white/90 hover:text-white"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              boxShadow: 'inset 1px 1px 0.5px rgba(255, 255, 255, 0.25), 0 2px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            <HugeiconsIcon icon={GithubIcon} size={15} strokeWidth={2} />
+            <span className="hidden xs:inline">GitHub</span>
+            {stars !== null && (
+              <span className="flex items-center gap-1 text-white/70 border-l border-white/10 pl-2">
+                <HugeiconsIcon icon={StarIcon} size={12} strokeWidth={2} className="text-amber-400 fill-amber-400" />
+                {stars}
+              </span>
+            )}
+          </a>
+        </div>
       </nav>
     </header>
   )
 }
 
-function Hero({ version, downloadHref, osLabel }: { version: string | null; downloadHref: string; osLabel: string }) {
+function Hero({
+  version,
+  downloadHref,
+  osLabel,
+}: {
+  version: string | null
+  downloadHref: string
+  osLabel: string
+}) {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden pt-28 pb-16">
+      {/* Ambient background glows */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-primary/25 blur-[140px] rounded-full animate-float-glow -z-10" />
+      <div className="pointer-events-none absolute top-1/3 -left-40 w-[500px] h-[500px] bg-accent/20 blur-[130px] rounded-full -z-10" />
+      <div className="pointer-events-none absolute top-1/2 -right-40 w-[500px] h-[500px] bg-purple-600/20 blur-[130px] rounded-full -z-10" />
+
       {!window.matchMedia('(prefers-reduced-motion: reduce)').matches && (
-        <div className="absolute inset-0 opacity-50" aria-hidden>
-          <Aurora colorStops={['#a3123f', '#ff5d8f', '#5c0a24']} amplitude={1.1} blend={0.55} speed={0.6} />
+        <div className="absolute inset-0 opacity-40 pointer-events-none -z-10" aria-hidden>
+          <Aurora colorStops={['#a3123f', '#7c1c4f', '#4c1d95']} amplitude={1.1} blend={0.6} speed={0.5} />
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background" aria-hidden />
 
-      <div className="relative mx-auto max-w-6xl px-4 pt-36 pb-20 text-center sm:px-6 sm:pt-44">
+      <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 z-10 flex flex-col items-center">
         <FadeContent duration={800}>
-          <p className="mx-auto mb-6 w-fit rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs tracking-widest text-muted-foreground uppercase">
-            Free · Open source · Linux &amp; Windows
-          </p>
+          <GlassBadge className="mb-6 border border-white/15">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-bright opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-bright"></span>
+            </span>
+            <span className="text-white/90">GMusic Desktop · Liquid Glass Edition</span>
+          </GlassBadge>
         </FadeContent>
 
         <SplitText
-          text="Your music. Ad-free. Native."
+          text="Your Music. Liquid Pure. No Ads."
           tag="h1"
           splitType="words"
-          delay={120}
-          duration={1}
-          className="font-heading text-4xl font-bold tracking-tight text-balance sm:text-6xl md:text-7xl"
+          delay={90}
+          duration={0.9}
+          className="font-heading text-4xl font-extrabold tracking-tight text-balance sm:text-6xl md:text-7xl text-white drop-shadow-sm"
         />
 
-        <FadeContent duration={900} delay={400}>
-          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            GMusic is a lightweight desktop player for YouTube Music. Search any song, hit play, and
-            listen without ads — no browser, no premium, no bloat.
+        <FadeContent duration={900} delay={350}>
+          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
+            A native YouTube Music player sculpted with frosted liquid glass aesthetics, libmpv audio engine, and zero
+            ad interruptions. Lightweight on memory, heavy on craft.
           </p>
         </FadeContent>
 
-        <FadeContent duration={900} delay={650}>
+        <FadeContent duration={900} delay={500}>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href={downloadHref}
-              className="flex items-center gap-2.5 rounded-full bg-primary-bright px-7 py-3.5 font-semibold text-primary-foreground shadow-lg shadow-primary/40 transition-transform hover:scale-105"
-            >
-              <HugeiconsIcon icon={PlayIcon} size={20} strokeWidth={2} fill="currentColor" />
-              Download for {osLabel}
-            </a>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2.5 rounded-full border border-white/15 px-7 py-3.5 font-medium transition-colors hover:border-white/30 hover:bg-white/5"
-            >
+            <GlassButton href={downloadHref} variant="primary">
+              <HugeiconsIcon icon={Download01Icon} size={20} strokeWidth={2.2} />
+              <span>Download for {osLabel}</span>
+            </GlassButton>
+
+            <GlassButton href={REPO_URL} target="_blank" variant="secondary">
               <HugeiconsIcon icon={GithubIcon} size={20} strokeWidth={2} />
-              View on GitHub
-            </a>
+              <span>Source Code</span>
+            </GlassButton>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            {version ? `Latest release ${version}` : 'Latest release'} · macOS not packaged yet
+
+          <p className="mt-4 text-xs font-medium text-muted-foreground/80">
+            {version ? `Version ${version}` : 'Latest Release'} · Free &amp; Open Source (GPL-3.0)
           </p>
         </FadeContent>
 
-        <AnimatedContent distance={80} duration={1.1} delay={0.25} scale={0.96} threshold={0}>
-          <div className="mt-16">
-            <img
-              src={homeImg}
-              alt="GMusic home view"
-              width={1920}
-              height={1043}
-              className="w-full rounded-xl border border-white/10 shadow-[0_0_120px_-24px_var(--primary-bright)]"
-            />
+        {/* Hero Image Showcase in Liquid Glass Frame */}
+        <AnimatedContent distance={60} duration={1} delay={0.2} scale={0.97} threshold={0}>
+          <div className="mt-14 relative group">
+            {/* Ambient specular frame glow */}
+            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-primary-bright/40 via-purple-500/30 to-pink-500/40 opacity-70 blur-xl transition-all duration-700 group-hover:opacity-100 group-hover:blur-2xl" />
+            
+            <div className="relative rounded-3xl overflow-hidden glass-panel p-2 sm:p-3 border border-white/20 shadow-2xl">
+              <img
+                src={homeImg}
+                alt="GMusic full desktop application interface"
+                width={1920}
+                height={1043}
+                className="w-full rounded-2xl object-cover shadow-inner"
+              />
+            </div>
           </div>
         </AnimatedContent>
       </div>
@@ -221,41 +270,55 @@ function Hero({ version, downloadHref, osLabel }: { version: string | null; down
 
 function Features() {
   return (
-    <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-6">
+    <section id="features" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
-        <p className="text-center text-xs font-semibold tracking-widest text-primary-bright uppercase">Why GMusic</p>
-        <h2 className="mx-auto mt-3 max-w-2xl text-center font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-          Everything the web player should have been
-        </h2>
+        <div className="text-center">
+          <GlassBadge className="mb-3 text-primary-bright">ENGINEERED FOR LISTENERS</GlassBadge>
+          <h2 className="mx-auto mt-2 max-w-2xl font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+            Everything You Wish YouTube Music Was
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+            No Electron memory hunger. No sponsored interruptions. Just high-precision audio in a bespoke interface.
+          </p>
+        </div>
       </FadeContent>
 
-      <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
-          <AnimatedContent key={f.title} distance={40} duration={0.8} delay={(i % 3) * 0.1} threshold={0.15}>
-            <SpotlightCard
-              spotlightColor={SPOTLIGHT}
-              className="h-full !rounded-xl !border-white/10 !bg-card/60 !p-6"
-            >
-              <div className="mb-4 flex size-11 items-center justify-center rounded-lg bg-primary/15 text-primary-bright">
-                <HugeiconsIcon icon={f.icon} size={22} strokeWidth={1.8} />
+          <AnimatedContent key={f.title} distance={40} duration={0.7} delay={i * 0.08} threshold={0.1}>
+            <GlassCard className="h-full p-6 sm:p-7 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="flex size-12 items-center justify-center rounded-2xl text-primary-bright"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(229, 72, 110, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                      boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.3)',
+                    }}
+                  >
+                    <HugeiconsIcon icon={f.icon} size={24} strokeWidth={2} />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-muted-foreground">
+                    {f.highlight}
+                  </span>
+                </div>
+                <h3 className="font-heading text-lg font-semibold text-white">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
               </div>
-              <h3 className="font-heading text-lg font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
-            </SpotlightCard>
+            </GlassCard>
           </AnimatedContent>
         ))}
       </div>
 
+
+      {/* Extras Pill Row */}
       <FadeContent duration={800} delay={150}>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           {EXTRAS.map(e => (
-            <span
-              key={e.label}
-              className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-muted-foreground"
-            >
+            <GlassBadge key={e.label} className="py-2 px-4 gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
               <HugeiconsIcon icon={e.icon} size={16} strokeWidth={1.8} className="text-primary-bright" />
-              {e.label}
-            </span>
+              <span>{e.label}</span>
+            </GlassBadge>
           ))}
         </div>
       </FadeContent>
@@ -265,25 +328,44 @@ function Features() {
 
 function Screens() {
   return (
-    <section id="screens" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-8 sm:px-6">
-      <div className="space-y-24">
+    <section id="screens" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6">
+      <div className="text-center mb-20">
+        <GlassBadge className="mb-3 text-primary-bright">VISUAL WORLD</GlassBadge>
+        <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
+          Crafted Down to Every Specular Pixel
+        </h2>
+      </div>
+
+      <div className="space-y-28">
         {SCREENS.map((s, i) => (
-          <AnimatedContent key={s.title} distance={60} duration={0.9} threshold={0.15}>
-            <div className={`flex flex-col items-center gap-8 lg:gap-14 ${i % 2 ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
-              <div className="lg:w-2/5">
-                <p className="text-xs font-semibold tracking-widest text-primary-bright uppercase">{s.eyebrow}</p>
-                <h3 className="mt-3 font-heading text-2xl font-bold tracking-tight sm:text-3xl">{s.title}</h3>
-                <p className="mt-4 leading-relaxed text-muted-foreground">{s.body}</p>
+          <AnimatedContent key={s.title} distance={50} duration={0.8} threshold={0.15}>
+            <div
+              className={`flex flex-col items-center gap-8 lg:gap-14 ${
+                i % 2 ? 'lg:flex-row-reverse' : 'lg:flex-row'
+              }`}
+            >
+              <div className="lg:w-2/5 space-y-4">
+                <GlassBadge className="text-primary-bright">{s.badge}</GlassBadge>
+                <h3 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl text-white">
+                  {s.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  {s.body}
+                </p>
               </div>
-              <div className="lg:w-3/5">
-                <img
-                  src={s.img}
-                  alt={s.alt}
-                  width={1920}
-                  height={1043}
-                  loading="lazy"
-                  className="w-full rounded-xl border border-white/10 shadow-2xl shadow-black/50"
-                />
+
+              <div className="lg:w-3/5 relative group w-full">
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-primary-bright/20 to-purple-500/20 blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative rounded-3xl overflow-hidden glass-panel p-2 sm:p-3 border border-white/20">
+                  <img
+                    src={s.img}
+                    alt={s.alt}
+                    width={1920}
+                    height={1043}
+                    loading="lazy"
+                    className="w-full rounded-2xl object-cover"
+                  />
+                </div>
               </div>
             </div>
           </AnimatedContent>
@@ -301,86 +383,121 @@ interface DownloadCard {
   note?: string
 }
 
-function Download({ info, os }: { info: ReturnType<typeof useGitHub>; os: string }) {
+function Download({ info, os }: { info: RepoInfo; os: string }) {
   const cards: DownloadCard[] = [
-    {
-      os: 'Linux',
-      icon: PackageIcon,
-      detected: os === 'linux',
-      links: [
-        { label: '.AppImage — any distro', href: info.appimage },
-        { label: '.deb — Ubuntu / Debian', href: info.deb },
-        { label: '.rpm — Fedora / RHEL', href: info.rpm },
-      ],
-      note: 'The AppImage updates itself automatically.',
-    },
     {
       os: 'Windows',
       icon: WindowsOldIcon,
       detected: os === 'windows',
       links: [
         { label: 'Installer (.exe)', href: info.exe },
-        { label: 'MSI package', href: info.msi },
+        { label: 'MSI Package (.msi)', href: info.msi },
       ],
+      note: 'Bundles libmpv audio & auto-updates built in.',
+    },
+    {
+      os: 'Linux',
+      icon: PackageIcon,
+      detected: os === 'linux',
+      links: [
+        { label: 'AppImage (x86_64)', href: info.appimage },
+        { label: 'Debian / Ubuntu (.deb)', href: info.deb },
+        { label: 'Fedora (.rpm)', href: info.rpm },
+      ],
+      note: 'AppImage includes seamless in-app auto-updates.',
     },
     {
       os: 'macOS',
       icon: Apple01Icon,
       detected: os === 'mac',
-      links: [{ label: 'Build from source', href: REPO_URL }],
-      note: 'Not packaged yet — coming later.',
+      links: [{ label: 'Build from Source', href: REPO_URL }],
+      note: 'Automated CI binary packaging coming soon.',
     },
   ]
 
   return (
-    <section id="download" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-6">
+    <section id="download" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
-        <p className="text-center text-xs font-semibold tracking-widest text-primary-bright uppercase">Download</p>
-        <h2 className="mt-3 text-center font-heading text-3xl font-bold tracking-tight sm:text-4xl">Get GMusic</h2>
-        <p className="mx-auto mt-4 max-w-xl text-center text-muted-foreground">
-          Free and open source. Install it, sign in with your YouTube account if you want your
-          library, and press play.
-        </p>
+        <div className="text-center">
+          <GlassBadge className="mb-3 text-primary-bright">INSTALLATION</GlassBadge>
+          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">Get GMusic Today</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+            Free and open-source forever. No tracker telemetry, no ads. Just clean music playback.
+          </p>
+        </div>
       </FadeContent>
 
-      <div className="mt-12 grid gap-5 md:grid-cols-3">
+      <div className="mt-14 grid gap-6 md:grid-cols-3">
         {cards.map((c, i) => (
           <AnimatedContent key={c.os} distance={40} duration={0.8} delay={i * 0.1} threshold={0.15}>
-            <div
-              className={`flex h-full flex-col rounded-xl border bg-card/60 p-6 ${
-                c.detected ? 'border-primary-bright/60 shadow-lg shadow-primary/20' : 'border-white/10'
+            <GlassCard
+              className={`p-6 sm:p-8 flex flex-col justify-between h-full ${
+                c.detected ? 'ring-2 ring-primary-bright/60 shadow-[0_0_40px_rgba(229,72,110,0.2)]' : ''
               }`}
             >
-              <div className="flex items-center gap-3">
-                <HugeiconsIcon icon={c.icon} size={24} strokeWidth={1.8} className="text-primary-bright" />
-                <h3 className="font-heading text-lg font-semibold">{c.os}</h3>
-                {c.detected && (
-                  <span className="ml-auto rounded-full bg-primary/20 px-2.5 py-0.5 text-xs text-primary-bright">
-                    Your system
-                  </span>
-                )}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex size-11 items-center justify-center rounded-2xl text-primary-bright"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(229, 72, 110, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                        boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.3)',
+                      }}
+                    >
+                      <HugeiconsIcon icon={c.icon} size={22} strokeWidth={2} />
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-white">{c.os}</h3>
+                  </div>
+                  {c.detected && (
+                    <span className="rounded-full bg-primary-bright/20 border border-primary-bright/30 px-3 py-1 text-xs font-semibold text-primary-bright">
+                      Your System
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {c.links.map(l => (
+                    <a
+                      key={l.label}
+                      href={l.href ?? RELEASES_URL}
+                      className="group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        boxShadow: 'inset 1px 1px 0.5px rgba(255, 255, 255, 0.15)',
+                      }}
+                    >
+                      <span className="text-white/90 group-hover:text-white transition-colors">{l.label}</span>
+                      <HugeiconsIcon
+                        icon={Download01Icon}
+                        size={16}
+                        strokeWidth={2}
+                        className="text-muted-foreground group-hover:text-primary-bright group-hover:translate-y-0.5 transition-all"
+                      />
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div className="mt-5 flex flex-1 flex-col gap-2.5">
-                {c.links.map(l => (
-                  <a
-                    key={l.label}
-                    href={l.href ?? RELEASES_URL}
-                    className="rounded-lg border border-white/10 px-4 py-2.5 text-center text-sm font-medium transition-colors hover:border-primary-bright/50 hover:bg-primary/10"
-                  >
-                    {l.label}
-                  </a>
-                ))}
-              </div>
-              {c.note && <p className="mt-4 text-xs text-muted-foreground">{c.note}</p>}
-            </div>
+
+              {c.note && <p className="mt-6 text-xs text-muted-foreground/80 leading-relaxed">{c.note}</p>}
+            </GlassCard>
           </AnimatedContent>
         ))}
       </div>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        {info.version && <>Latest release <span className="text-foreground">{info.version}</span> · </>}
-        <a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-foreground">
-          All releases
+      <p className="mt-10 text-center text-sm text-muted-foreground">
+        {info.version && (
+          <>
+            Latest release <span className="font-semibold text-white">{info.version}</span> ·{' '}
+          </>
+        )}
+        <a
+          href={`${REPO_URL}/releases`}
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-4 hover:text-white transition-colors"
+        >
+          View all release notes &amp; architecture packages on GitHub →
         </a>
       </p>
     </section>
@@ -389,22 +506,34 @@ function Download({ info, os }: { info: ReturnType<typeof useGitHub>; os: string
 
 function Footer() {
   return (
-    <footer className="border-t border-white/5">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-10 text-center text-sm text-muted-foreground sm:px-6">
-        <div className="flex items-center gap-2 font-semibold text-foreground">
-          <img src={logo} alt="" className="size-5" />
-          GMusic
+    <footer className="relative border-t border-white/10 mt-16 overflow-hidden">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-12 text-center text-sm text-muted-foreground sm:px-6">
+        <div className="flex items-center gap-2.5 font-semibold text-foreground">
+          <img src={logo} alt="GMusic" className="size-6 object-contain" />
+          <span className="font-heading text-base font-bold text-white">GMusic</span>
         </div>
-        <p className="max-w-2xl text-xs leading-relaxed">
-          GMusic is an unofficial, open-source client and is not affiliated with or endorsed by
-          YouTube or Google. YouTube Music is a trademark of Google LLC.
+
+        <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70">
+          GMusic is an open-source, unofficial YouTube Music desktop client based on Limusic &amp; Metrolist. It is not affiliated with
+          or endorsed by Google LLC or YouTube. YouTube Music is a trademark of Google LLC.
         </p>
-        <div className="flex items-center gap-5">
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
-            <HugeiconsIcon icon={GithubIcon} size={15} strokeWidth={2} /> Source
+
+        <div className="flex items-center gap-6 text-xs font-medium">
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 transition-colors hover:text-white"
+          >
+            <HugeiconsIcon icon={GithubIcon} size={15} strokeWidth={2} /> Source Code
           </a>
-          <a href={`${REPO_URL}/blob/master/LICENSE`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
-            <HugeiconsIcon icon={SourceCodeIcon} size={15} strokeWidth={2} /> GPL-3.0
+          <a
+            href={`${REPO_URL}/blob/master/LICENSE`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 transition-colors hover:text-white"
+          >
+            <HugeiconsIcon icon={SourceCodeIcon} size={15} strokeWidth={2} /> GPL-3.0 License
           </a>
         </div>
       </div>
@@ -415,12 +544,18 @@ function Footer() {
 export default function App() {
   const info = useGitHub()
   const os = detectOS()
-  const osLabel = os === 'windows' ? 'Windows' : os === 'mac' ? 'macOS' : 'Linux'
+  const osLabel = os === 'windows' ? 'Windows' : os === 'linux' ? 'Linux' : 'macOS'
+
   const downloadHref =
-    (os === 'windows' ? info.exe : os === 'linux' ? info.appimage : null) ?? '#download'
+    os === 'windows'
+      ? (info.exe ?? info.msi ?? '#download')
+      : os === 'linux'
+        ? (info.appimage ?? info.deb ?? '#download')
+        : '#download'
 
   return (
-    <>
+    <div className="relative min-h-screen text-foreground antialiased selection:bg-primary/30 selection:text-white">
+      <GlassFilter />
       <Nav stars={info.stars} />
       <main>
         <Hero version={info.version} downloadHref={downloadHref} osLabel={osLabel} />
@@ -429,6 +564,6 @@ export default function App() {
         <Download info={info} os={os} />
       </main>
       <Footer />
-    </>
+    </div>
   )
 }
