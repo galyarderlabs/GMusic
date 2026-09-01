@@ -8,7 +8,7 @@ import { toast } from './player.svelte';
 import { t } from './i18n.svelte';
 import { canSelfUpdate, getSettings, openExternal } from './api';
 
-const RELEASES_URL = 'https://github.com/SimoHypers/limusic/releases/latest';
+const RELEASES_URL = 'https://github.com/galyarderlabs/GMusic/releases/latest';
 
 /** How often the quiet check repeats while the app stays open. */
 export const QUIET_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -24,15 +24,32 @@ export const updateState = $state({
 let pending: Update | null = null;
 
 async function look(): Promise<boolean> {
-	const u = await check();
-	if (u) {
-		pending = u;
-		// Before `available`, so the banner never renders with the wrong button for a frame. On the
-		// (unlikely) IPC failure, fall back to the download link: it works everywhere, while
-		// "Update now" on a packaged build does not.
-		updateState.canInstall = await canSelfUpdate().catch(() => false);
-		updateState.available = { version: u.version };
-		return true;
+	try {
+		const u = await check();
+		if (u) {
+			pending = u;
+			updateState.canInstall = await canSelfUpdate().catch(() => false);
+			updateState.available = { version: u.version };
+			return true;
+		}
+	} catch {
+		// Fallback to checking GitHub Releases API
+		try {
+			const res = await fetch('https://api.github.com/repos/galyarderlabs/GMusic/releases/latest', {
+				headers: { Accept: 'application/vnd.github+json' }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				const remoteVer = (data.tag_name || '').replace(/^v/, '');
+				if (remoteVer && remoteVer !== '0.6.5' && remoteVer > '0.6.5') {
+					updateState.canInstall = false;
+					updateState.available = { version: remoteVer };
+					return true;
+				}
+			}
+		} catch (err) {
+			console.warn('GitHub releases check fallback:', err);
+		}
 	}
 	return false;
 }

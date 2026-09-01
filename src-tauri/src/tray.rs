@@ -71,23 +71,21 @@ mod imp {
 
     use super::{handle_menu, show_main};
 
-    /// `Handle` isn't `Clone`, so it lives here rather than in Tauri's managed state — that also
-    /// keeps [`set_playing`] callable without borrowing across an await.
-    static HANDLE: OnceLock<Handle<LimusicTray>> = OnceLock::new();
+    static HANDLE: OnceLock<Handle<GMusicTray>> = OnceLock::new();
 
-    struct LimusicTray {
+    struct GMusicTray {
         app: AppHandle,
         playing: bool,
         icon: Vec<Icon>,
     }
 
-    impl Tray for LimusicTray {
+    impl Tray for GMusicTray {
         fn id(&self) -> String {
-            "limusic".into()
+            "gmusic".into()
         }
 
         fn title(&self) -> String {
-            "Limusic".into()
+            "GMusic".into()
         }
 
         fn icon_pixmap(&self) -> Vec<Icon> {
@@ -108,7 +106,7 @@ mod imp {
                 })
             };
             vec![
-                item("Show Limusic", "show"),
+                item("Show GMusic", "show"),
                 MenuItem::Separator,
                 item(if self.playing { "Pause" } else { "Play" }, "play_pause"),
                 item("Next", "next"),
@@ -130,7 +128,7 @@ mod imp {
     }
 
     pub fn init(app: &AppHandle) -> tauri::Result<()> {
-        let tray = LimusicTray { app: app.clone(), playing: false, icon: icon_pixmap(app) };
+        let tray = GMusicTray { app: app.clone(), playing: false, icon: icon_pixmap(app) };
         // Registering with the StatusNotifierWatcher is async and can outlive setup(); a failure
         // here costs the tray, not the app, so it's logged rather than propagated.
         tauri::async_runtime::spawn(async move {
@@ -166,7 +164,7 @@ mod imp {
     }
 
     pub fn init(app: &AppHandle) -> tauri::Result<()> {
-        let show = MenuItem::with_id(app, "show", "Show Limusic", true, None::<&str>)?;
+        let show = MenuItem::with_id(app, "show", "Show GMusic", true, None::<&str>)?;
         let play_pause = MenuItem::with_id(app, "play_pause", "Play", true, None::<&str>)?;
         let next = MenuItem::with_id(app, "next", "Next", true, None::<&str>)?;
         let prev = MenuItem::with_id(app, "prev", "Previous", true, None::<&str>)?;
@@ -189,7 +187,7 @@ mod imp {
         let mut builder = TrayIconBuilder::with_id("main")
             .menu(&menu)
             .show_menu_on_left_click(false)
-            .tooltip("Limusic")
+            .tooltip("GMusic")
             .on_menu_event(|app, event| handle_menu(app, event.id.as_ref()))
             .on_tray_icon_event(|tray, event| {
                 if let TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } = event {

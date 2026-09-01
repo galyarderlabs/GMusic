@@ -25,7 +25,7 @@
 	import LastFmIcon from './LastFmIcon.svelte';
 	import DiscordIcon from './DiscordIcon.svelte';
 	import AccountMenu from './AccountMenu.svelte';
-	import logo from '$lib/assets/favicon.svg';
+	import logo from '$lib/assets/logo.png';
 	import * as api from '$lib/api';
 	import { openMiniPlayer, playback, toast, ui } from '$lib/player.svelte';
 	import { lt } from '$lib/lt.svelte';
