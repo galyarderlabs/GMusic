@@ -47,7 +47,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote add upstream https://github.com/SimoHypers/limusic.git 2>/dev/null || true
-          git fetch upstream master --tags --prune
+          git fetch --force upstream master --tags --prune
 
           if [ -n "${{ inputs.release_tag }}" ]; then
             TAG="${{ inputs.release_tag }}"
