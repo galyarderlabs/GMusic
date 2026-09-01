@@ -138,7 +138,7 @@
      under it instead of the other way round. -->
 <header
 	data-tauri-drag-region
-	class="relative {ui.theaterOpen ? 'z-0' : 'z-50'} flex h-9 shrink-0 select-none items-center justify-between border-b border-border/60 bg-background"
+	class="relative {ui.theaterOpen ? 'z-0' : 'z-50'} flex h-9 shrink-0 select-none items-center justify-between border-b border-border/60 bg-background glass-surface glass-border"
 >
 	<div class="flex h-full items-center">
 		<!-- pointer-events-none: the logo is decoration; clicks on it should drag the window. -->
