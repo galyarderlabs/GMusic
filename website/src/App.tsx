@@ -29,9 +29,9 @@ import { useGitHub, detectOS, REPO_URL, RELEASES_URL } from '@/lib/github'
 import logo from '@/assets/logo.png'
 import homeImg from '@/assets/home.png'
 import miniplayerImg from '@/assets/miniplayer.png'
-import screenLyrics from '@/assets/screen-lyrics.webp'
-import screenArtist from '@/assets/screen-artist.webp'
-import screenTogether from '@/assets/screen-listen-together.webp'
+import lyricsImg from '@/assets/lyrics.png'
+import browseImg from '@/assets/browse.png'
+import togetherImg from '@/assets/together.png'
 
 const SPOTLIGHT = 'rgba(229, 72, 110, 0.16)' as const
 
@@ -94,21 +94,21 @@ const SCREENS = [
     eyebrow: 'Lyrics',
     title: 'Sing every word',
     body: 'Synced lyrics stay locked to the music. The current line lights up and the rest fades back, so you never lose your place.',
-    img: screenLyrics,
+    img: lyricsImg,
     alt: 'GMusic showing time-synced lyrics',
   },
   {
     eyebrow: 'Browse',
     title: 'Go down the rabbit hole',
     body: 'Artists, albums, singles, moods and mixes — the full YouTube Music catalog in a fast native window, with search that feels instant.',
-    img: screenArtist,
-    alt: 'An artist page in GMusic with top songs and albums',
+    img: browseImg,
+    alt: 'Browse and search in GMusic',
   },
   {
     eyebrow: 'Together',
     title: 'Press play with friends',
     body: 'Start a Listen Together session and send one invite code. Every play, skip and queue change stays in sync for everyone.',
-    img: screenTogether,
+    img: togetherImg,
     alt: 'The Listen Together dialog in GMusic',
   },
 ]
