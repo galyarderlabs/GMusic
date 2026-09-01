@@ -17,47 +17,95 @@
   <img src="https://img.shields.io/badge/Svelte_5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white">
 </p>
 
-**GMusic** is a customized, high-performance desktop client for YouTube Music based on [Limusic](https://github.com/SimoHypers/limusic). It communicates directly with YouTube's internal APIs and plays audio through `libmpv` without bundled Chromium runtimes or heavy Electron memory footprints.
-
 </div>
 
 ---
 
-## Key Features & Customizations
+## About
 
-- **Ad-free & High-Fidelity Audio** — Direct audio stream extraction from YouTube Music with `libmpv` loudness normalization.
-- **Custom Branding & Theme** — Tailored GMusic branding with native GTK titlebar decorations matching `MacTahoe-Dark`.
-- **Discord Rich Presence** — Registered with Discord Application ID `1544171902451589211` displaying *"Listening to GMusic"* with album artwork and duration.
-- **Last.fm Scrobbling** — Integrated Last.fm scrobbler keys compiled natively into the desktop binary.
-- **Synced Lyrics** — Line-by-line & word-by-word synced lyrics via LRCLIB and Boidu.
-- **Multi-Language Support** — Ships with **Bahasa Indonesia (`id`)**, English (`en`), Türkçe (`tr`), and Português do Brasil (`pt-BR`).
-- **Automated CI/CD & CLI Updater** — Single-command rootless updates via `update-gmusic` tracking upstream master daily.
+GMusic is a high-performance desktop client for YouTube Music based on [Limusic](https://github.com/SimoHypers/limusic). It communicates directly with YouTube's internal APIs and plays audio through `libmpv` — no bundled Chromium, no Electron, no ads.
+
+## Features
+
+- **Ad-free playback** with `libmpv` loudness normalization and gapless transitions
+- **Synced lyrics** — line-by-line & word-by-word via LRCLIB and Boidu
+- **Discord Rich Presence** — shows what you're listening to with album artwork
+- **Last.fm scrobbling** — built-in scrobbler, no external plugins needed
+- **Theme engine** — 10 preset themes including Liquid Glass, plus custom accent colors, hue tinting, fonts, and artwork-adaptive colors
+- **Multi-language** — English, Bahasa Indonesia, Turkce, Portugues do Brasil
+- **Keyboard-driven** — full shortcut system with customizable bindings
+- **Theater mode & Mini player** — multiple playback views
+- **Local music** — play local files alongside YouTube Music
 
 ---
 
-## Download & Installation
+## Download & Install
 
-### Linux Rootless Installer (Recommended)
+### Linux (.deb)
 
-You can install or update GMusic directly in user-space (`~/.local/opt/gmusic`) using the `update-gmusic` CLI tool:
+Download the latest `.deb` package from [**Releases**](https://github.com/galyarderlabs/GMusic/releases/latest) and install:
 
 ```bash
-# Install / update latest stable release
-update-gmusic
+# Install with dpkg
+sudo dpkg -i GMusic_*.deb
 
-# Build and install latest nightly from upstream master
-update-gmusic --build-nightly
+# Or install in user-space (rootless, no sudo)
+# Extract and place in ~/.local/opt/gmusic
 ```
 
-Or manually download `.deb` and `.AppImage` packages directly from [GMusic Releases](https://github.com/galyarderlabs/GMusic/releases/latest).
+### Runtime Dependencies
+
+GMusic requires `libmpv` for audio playback:
+
+```bash
+# Fedora
+sudo dnf install mpv-libs
+
+# Ubuntu / Debian
+sudo apt install libmpv2
+
+# Arch
+sudo pacman -S mpv
+```
+
+---
+
+## Build from Source
+
+### Prerequisites
+
+- [Rust](https://rustup.rs/) (stable)
+- [Node.js](https://nodejs.org/) 20+ & [pnpm](https://pnpm.io/)
+- System packages:
+
+```bash
+# Fedora
+sudo dnf install webkit2gtk4.1-devel libmpv-devel openssl-devel cmake gcc-c++
+
+# Ubuntu / Debian
+sudo apt install libwebkit2gtk-4.1-dev libmpv-dev libssl-dev cmake build-essential
+```
+
+### Build
+
+```bash
+git clone https://github.com/galyarderlabs/GMusic.git
+cd GMusic
+
+# Install frontend dependencies
+pnpm --dir ui install
+
+# Build the desktop app
+cargo tauri build
+```
+
+The built `.deb` and `AppImage` will be in `src-tauri/target/release/bundle/`.
 
 ---
 
 ## Upstream & Acknowledgements
 
-GMusic is proudly based on the open-source [Limusic](https://github.com/SimoHypers/limusic) project by [SimoHypers](https://github.com/SimoHypers) and the playback architecture originally inspired by [Metrolist](https://github.com/mostafaalagamy/Metrolist).
-
----
+GMusic is based on [Limusic](https://github.com/SimoHypers/limusic) by [SimoHypers](https://github.com/SimoHypers), with playback architecture originally inspired by [Metrolist](https://github.com/mostafaalagamy/Metrolist).
 
 ## License
 
