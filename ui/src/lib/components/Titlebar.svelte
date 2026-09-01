@@ -140,12 +140,6 @@
 	data-tauri-drag-region
 	class="relative {ui.theaterOpen ? 'z-0' : 'z-50'} flex h-9 shrink-0 select-none items-center justify-between border-b border-border/60 bg-background"
 >
-	<span
-		class="pointer-events-none absolute inset-x-0 text-center text-xs font-semibold tracking-wide text-muted-foreground/80"
-	>
-		GMusic
-	</span>
-
 	<div class="flex h-full items-center">
 		<!-- pointer-events-none: the logo is decoration; clicks on it should drag the window. -->
 		<img src={logo} alt="" class="pointer-events-none ml-3 mr-1.5 h-4 w-4 rounded-sm object-contain" />
@@ -171,9 +165,8 @@
 		</button>
 	</div>
 
-	<div class="flex h-full items-center pr-1.5">
-		<!-- Account first, then the integrations, then the window controls. The drag region lives on
-		     <header> only, so these children are ordinary buttons — don't add the attribute here. -->
+	<div class="flex h-full items-center pr-2">
+		<!-- Account first, then the integrations, then the toolbar actions -->
 		<AccountMenu />
 		<div class="mx-1.5 h-4 w-px bg-border/60"></div>
 
@@ -283,36 +276,6 @@
 		>
 			<HugeiconsIcon icon={MinimizeScreenIcon} class="h-4 w-4" />
 		</button>
-
-		<div class="mx-2 h-4 w-px bg-border/60"></div>
-
-		<!-- Native-like GTK Adwaita window buttons -->
-		<div class="flex items-center gap-1">
-			<button
-				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground"
-				onclick={() => win.minimize()}
-				title={t('common.minimize')}
-				aria-label={t('common.minimize')}
-			>
-				<HugeiconsIcon icon={MinusSignIcon} class="h-3 w-3" />
-			</button>
-			<button
-				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-accent/20 hover:text-foreground"
-				onclick={() => win.toggleMaximize()}
-				title={t('common.maximize')}
-				aria-label={t('common.maximize')}
-			>
-				<HugeiconsIcon icon={SquareIcon} class="h-2.5 w-2.5" />
-			</button>
-			<button
-				class="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-red-500 hover:text-white"
-				onclick={() => win.close()}
-				title={t('common.close')}
-				aria-label={t('common.close')}
-			>
-				<HugeiconsIcon icon={Cancel01Icon} class="h-3 w-3" />
-			</button>
-		</div>
 	</div>
 </header>
 
