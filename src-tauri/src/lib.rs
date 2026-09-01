@@ -115,11 +115,28 @@ fn tune_webview(win: &tauri::WebviewWindow, media: bool) {
     }
 }
 
+#[cfg(target_os = "linux")]
+fn configure_gtk_window(win: &tauri::WebviewWindow) {
+    use gtk::prelude::*;
+    if let Ok(gtk_win) = win.gtk_window() {
+        if let Some(titlebar) = gtk_win.titlebar() {
+            if let Ok(header) = titlebar.downcast::<gtk::HeaderBar>() {
+                header.set_decoration_layout(Some("close,minimize,maximize:"));
+                header.set_show_close_button(true);
+            }
+        }
+        if let Some(settings) = gtk::Settings::default() {
+            settings.set_gtk_decoration_layout(Some("close,minimize,maximize:"));
+        }
+    }
+}
+
 /// [`tune_webview`] for a window looked up by label. No-op if it isn't up.
 #[cfg(target_os = "linux")]
 pub(crate) fn tune_webview_labelled(app: &tauri::AppHandle, label: &str, media: bool) {
     if let Some(win) = app.get_webview_window(label) {
         tune_webview(&win, media);
+        configure_gtk_window(&win);
     }
 }
 
