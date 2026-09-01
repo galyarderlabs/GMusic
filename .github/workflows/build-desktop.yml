@@ -3,10 +3,25 @@ name: Build Desktop (Linux)
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Release Tag (e.g. v0.6.5)'
+      build_target:
+        description: 'Build target'
         required: true
-        default: 'v0.6.5'
+        type: choice
+        options:
+          - 'latest-release'
+          - 'latest-commit'
+          - 'custom-ref'
+        default: 'latest-release'
+      custom_ref:
+        description: 'Tag name or commit SHA (only used if build_target is custom-ref)'
+        required: false
+        default: ''
+      release_tag:
+        description: 'Explicit Release Tag override (optional)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '0 4 * * *' # Daily at 04:00 UTC
 
 permissions:
   contents: write
@@ -15,18 +30,74 @@ jobs:
   build-linux:
     name: Build Linux .deb & .AppImage (x86_64)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Release Metadata & Sync Upstream (if Nightly)
+        id: meta
+        run: |
+          TARGET="${{ inputs.build_target || (github.event_name == 'schedule' && 'latest-commit' || 'latest-release') }}"
+          
+          # Add upstream remote
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/SimoHypers/limusic.git 2>/dev/null || true
+          git fetch upstream master --tags --prune
+
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+            TITLE="GMusic $TAG"
+          elif [ "$TARGET" = "custom-ref" ] && [ -n "${{ inputs.custom_ref }}" ]; then
+            REF="${{ inputs.custom_ref }}"
+            TAG="$REF"
+            TITLE="GMusic $TAG"
+          elif [ "$TARGET" = "latest-commit" ]; then
+            # Merge latest upstream commits into current GMusic tree
+            echo "Merging latest upstream commits from SimoHypers/limusic:master..."
+            git merge --no-edit upstream/master || true
+            
+            UPSTREAM_SHA=$(git rev-parse upstream/master)
+            SHORT_SHA="${UPSTREAM_SHA:0:7}"
+            DATE_STR=$(date -u +'%Y.%m.%d')
+            TAG="nightly-${DATE_STR}-${SHORT_SHA}"
+            TITLE="GMusic Nightly (${DATE_STR} - ${SHORT_SHA})"
+          else
+            LATEST_UPSTREAM_TAG=$(git describe --tags $(git rev-list --tags --max-count=1 upstream/master) 2>/dev/null || echo "v0.6.7")
+            TAG="$LATEST_UPSTREAM_TAG"
+            TITLE="GMusic $TAG"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          echo "Target: $TARGET | Release Tag: $TAG | Title: $TITLE"
+
+      - name: Check if Release Already Exists
+        id: check_release
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTS=$(gh release view "${{ steps.meta.outputs.tag }}" --repo "${{ github.repository }}" --json tagName -q .tagName 2>/dev/null || echo "")
+          if [ -n "$EXISTS" ]; then
+            echo "Release ${{ steps.meta.outputs.tag }} already exists. Skipping build."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup pnpm 10
+        if: steps.check_release.outputs.skip != 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Use Node.js 22
+        if: steps.check_release.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -34,6 +105,7 @@ jobs:
           cache-dependency-path: 'ui/pnpm-lock.yaml'
 
       - name: Install Linux system dependencies
+        if: steps.check_release.outputs.skip != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -51,9 +123,11 @@ jobs:
             file
 
       - name: Install Rust toolchain
+        if: steps.check_release.outputs.skip != 'true'
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust Cache
+        if: steps.check_release.outputs.skip != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
@@ -61,23 +135,26 @@ jobs:
             src-tauri
 
       - name: Install UI dependencies & build
+        if: steps.check_release.outputs.skip != 'true'
         run: |
           cd ui
           pnpm install --frozen-lockfile
           pnpm build
 
       - name: Install Tauri CLI
+        if: steps.check_release.outputs.skip != 'true'
         run: npm install -g "@tauri-apps/cli@^2"
 
       - name: Build Tauri Desktop (.deb & .AppImage)
+        if: steps.check_release.outputs.skip != 'true'
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         run: |
-          # Build deb and AppImage
           tauri build --bundles deb,appimage
 
       - name: Prepare Release Artifacts
+        if: steps.check_release.outputs.skip != 'true'
         id: prepare_assets
         run: |
           mkdir -p dist-release
@@ -88,15 +165,17 @@ jobs:
           ls -la dist-release/
 
       - name: Publish or Update GitHub Release
+        if: steps.check_release.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.release_tag }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          TITLE: ${{ steps.meta.outputs.title }}
         run: |
-          echo "Publishing release $TAG..."
+          echo "Publishing release $TAG ($TITLE)..."
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" dist-release/* \
-              --title "GMusic $TAG" \
-              --notes "GMusic $TAG — Native Linux Desktop Release (.deb & .AppImage)"
+              --title "$TITLE" \
+              --notes "$TITLE — Automated GMusic Linux Desktop Release (.deb & .AppImage)"
           else
             gh release upload "$TAG" dist-release/* --clobber
           fi
