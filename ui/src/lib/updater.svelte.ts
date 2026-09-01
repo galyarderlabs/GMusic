@@ -4,6 +4,7 @@
 // update through their package manager, so they get a download link instead. See `canInstall`.
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { getVersion } from '@tauri-apps/api/app';
 import { toast } from './player.svelte';
 import { t } from './i18n.svelte';
 import { canSelfUpdate, getSettings, openExternal } from './api';
@@ -23,6 +24,36 @@ export const updateState = $state({
 // The resolved handle to download; kept out of reactive state (it's not serializable/renderable).
 let pending: Update | null = null;
 
+function parseSemVer(v: string): number[] {
+	const clean = v.replace(/^v/, '').replace(/^nightly-[\d.]+-/, '');
+	const parts = clean.split('.').map((p) => parseInt(p, 10) || 0);
+	while (parts.length < 3) parts.push(0);
+	return parts;
+}
+
+function isNewerVersion(remoteTag: string, currentVer: string): boolean {
+	if (!remoteTag || !currentVer) return false;
+	const cleanRemote = remoteTag.replace(/^v/, '');
+	const cleanCurrent = currentVer.replace(/^v/, '');
+	if (cleanRemote === cleanCurrent) return false;
+
+	// If remote is a nightly tag
+	if (cleanRemote.startsWith('nightly-')) {
+		if (cleanCurrent.startsWith('nightly-')) {
+			return cleanRemote > cleanCurrent;
+		}
+		// If running regular release (e.g. 0.6.7) and remote is nightly of 0.6.7, don't nag
+		return false;
+	}
+
+	const [rMaj, rMin, rPatch] = parseSemVer(cleanRemote);
+	const [cMaj, cMin, cPatch] = parseSemVer(cleanCurrent);
+	if (rMaj > cMaj) return true;
+	if (rMaj === cMaj && rMin > cMin) return true;
+	if (rMaj === cMaj && rMin === cMin && rPatch > cPatch) return true;
+	return false;
+}
+
 async function look(): Promise<boolean> {
 	try {
 		const u = await check();
@@ -35,15 +66,16 @@ async function look(): Promise<boolean> {
 	} catch {
 		// Fallback to checking GitHub Releases API
 		try {
+			const currentVer = await getVersion().catch(() => '0.6.7');
 			const res = await fetch('https://api.github.com/repos/galyarderlabs/GMusic/releases/latest', {
 				headers: { Accept: 'application/vnd.github+json' }
 			});
 			if (res.ok) {
 				const data = await res.json();
-				const remoteVer = (data.tag_name || '').replace(/^v/, '');
-				if (remoteVer && remoteVer !== '0.6.5' && remoteVer > '0.6.5') {
+				const remoteTag = data.tag_name || '';
+				if (remoteTag && isNewerVersion(remoteTag, currentVer)) {
 					updateState.canInstall = false;
-					updateState.available = { version: remoteVer };
+					updateState.available = { version: remoteTag.replace(/^v/, '') };
 					return true;
 				}
 			}

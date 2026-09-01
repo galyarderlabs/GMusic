@@ -711,11 +711,9 @@
 							<div class={CARD}>
 								{@render row({
 									title: t('settings.about.check_updates'),
-									desc: updateState.available && !updateState.canInstall
-										? `${updateState.available.version} ${t('settings.about.update_available').replace('{version}', '')} Bu derleme paket yöneticisiyle kuruldu, aynı şekilde güncelleyin.`
-										: updateState.available
-											? t('settings.about.update_available').replace('{version}', updateState.available.version)
-											: t('settings.about.up_to_date'),
+									desc: updateState.available
+										? t('settings.about.update_available').replace('{version}', updateState.available.version)
+										: t('settings.about.up_to_date'),
 									control: updateButton,
 									below: updateResult && !updateState.available ? updateAlert : undefined
 								})}
