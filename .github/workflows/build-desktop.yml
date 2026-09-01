@@ -22,6 +22,9 @@ on:
         default: ''
   schedule:
     - cron: '0 4 * * *' # Daily at 04:00 UTC
+  push:
+    paths:
+      - '.github/workflows/build-desktop.yml'
 
 permissions:
   contents: write
