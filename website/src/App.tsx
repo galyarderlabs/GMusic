@@ -27,7 +27,8 @@ import SpotlightCard from '@/components/SpotlightCard'
 import { useGitHub, detectOS, REPO_URL, RELEASES_URL } from '@/lib/github'
 
 import logo from '@/assets/logo.png'
-import screenPlaylist from '@/assets/screen-playlist.webp'
+import homeImg from '@/assets/home.png'
+import miniplayerImg from '@/assets/miniplayer.png'
 import screenLyrics from '@/assets/screen-lyrics.webp'
 import screenArtist from '@/assets/screen-artist.webp'
 import screenTogether from '@/assets/screen-listen-together.webp'
@@ -38,7 +39,7 @@ const FEATURES = [
   {
     icon: MusicNote01Icon,
     title: 'No ads, ever',
-    body: 'Limusic plays the audio stream directly, so there is nothing to interrupt. No ad breaks, no premium subscription.',
+    body: 'GMusic plays the audio stream directly, so there is nothing to interrupt. No ad breaks, no premium subscription.',
   },
   {
     icon: DashboardSpeed01Icon,
@@ -76,25 +77,39 @@ const EXTRAS = [
 
 const SCREENS = [
   {
+    eyebrow: 'Interface',
+    title: 'Clean, native, fast',
+    body: 'A fluid, modern interface built with Svelte 5. Explore your library, customize your theme, and enjoy smooth playback without browser bloat.',
+    img: homeImg,
+    alt: 'GMusic home interface',
+  },
+  {
+    eyebrow: 'Mini Player',
+    title: 'Compact & always within reach',
+    body: 'Switch to a sleek mini player to keep your controls and album artwork accessible while multitasking.',
+    img: miniplayerImg,
+    alt: 'GMusic mini player mode',
+  },
+  {
     eyebrow: 'Lyrics',
     title: 'Sing every word',
     body: 'Synced lyrics stay locked to the music. The current line lights up and the rest fades back, so you never lose your place.',
     img: screenLyrics,
-    alt: 'Limusic showing time-synced lyrics',
+    alt: 'GMusic showing time-synced lyrics',
   },
   {
     eyebrow: 'Browse',
     title: 'Go down the rabbit hole',
     body: 'Artists, albums, singles, moods and mixes — the full YouTube Music catalog in a fast native window, with search that feels instant.',
     img: screenArtist,
-    alt: 'An artist page in Limusic with top songs and albums',
+    alt: 'An artist page in GMusic with top songs and albums',
   },
   {
     eyebrow: 'Together',
     title: 'Press play with friends',
     body: 'Start a Listen Together session and send one invite code. Every play, skip and queue change stays in sync for everyone.',
     img: screenTogether,
-    alt: 'The Listen Together dialog in Limusic',
+    alt: 'The Listen Together dialog in GMusic',
   },
 ]
 
@@ -104,7 +119,7 @@ function Nav({ stars }: { stars: number | null }) {
       <nav className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2.5 font-semibold tracking-wide">
           <img src={logo} alt="" className="size-6" />
-          Limusic
+          GMusic
         </a>
         <div className="ml-auto hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
           <a href="#features" className="transition-colors hover:text-foreground">Features</a>
@@ -159,7 +174,7 @@ function Hero({ version, downloadHref, osLabel }: { version: string | null; down
 
         <FadeContent duration={900} delay={400}>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Limusic is a lightweight desktop player for YouTube Music. Search any song, hit play, and
+            GMusic is a lightweight desktop player for YouTube Music. Search any song, hit play, and
             listen without ads — no browser, no premium, no bloat.
           </p>
         </FadeContent>
@@ -191,8 +206,8 @@ function Hero({ version, downloadHref, osLabel }: { version: string | null; down
         <AnimatedContent distance={80} duration={1.1} delay={0.25} scale={0.96} threshold={0}>
           <div className="mt-16">
             <img
-              src={screenPlaylist}
-              alt="Limusic playing a playlist, with the queue open"
+              src={homeImg}
+              alt="GMusic home view"
               width={1920}
               height={1043}
               className="w-full rounded-xl border border-white/10 shadow-[0_0_120px_-24px_var(--primary-bright)]"
@@ -208,7 +223,7 @@ function Features() {
   return (
     <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
-        <p className="text-center text-xs font-semibold tracking-widest text-primary-bright uppercase">Why Limusic</p>
+        <p className="text-center text-xs font-semibold tracking-widest text-primary-bright uppercase">Why GMusic</p>
         <h2 className="mx-auto mt-3 max-w-2xl text-center font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">
           Everything the web player should have been
         </h2>
@@ -321,7 +336,7 @@ function Download({ info, os }: { info: ReturnType<typeof useGitHub>; os: string
     <section id="download" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
         <p className="text-center text-xs font-semibold tracking-widest text-primary-bright uppercase">Download</p>
-        <h2 className="mt-3 text-center font-heading text-3xl font-bold tracking-tight sm:text-4xl">Get Limusic</h2>
+        <h2 className="mt-3 text-center font-heading text-3xl font-bold tracking-tight sm:text-4xl">Get GMusic</h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-muted-foreground">
           Free and open source. Install it, sign in with your YouTube account if you want your
           library, and press play.
@@ -378,10 +393,10 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-10 text-center text-sm text-muted-foreground sm:px-6">
         <div className="flex items-center gap-2 font-semibold text-foreground">
           <img src={logo} alt="" className="size-5" />
-          Limusic
+          GMusic
         </div>
         <p className="max-w-2xl text-xs leading-relaxed">
-          Limusic is an unofficial, open-source client and is not affiliated with or endorsed by
+          GMusic is an unofficial, open-source client and is not affiliated with or endorsed by
           YouTube or Google. YouTube Music is a trademark of Google LLC.
         </p>
         <div className="flex items-center gap-5">
