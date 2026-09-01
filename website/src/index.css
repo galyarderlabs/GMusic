@@ -5,26 +5,26 @@
 /* Limusic app theme (default, dark) — tokens copied from ui/src/routes/layout.css .dark block.
    The site is dark-only. */
 :root {
-  --background: oklch(0.12 0.02 280);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.02 280 / 50%);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.02 280 / 80%);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.60 0.22 330);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.25 0.03 270 / 60%);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.22 0.02 280 / 60%);
-  --muted-foreground: oklch(0.72 0.02 280);
-  --accent: oklch(0.55 0.20 310);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.60 0.22 330);
+  --background: #090a0d;
+  --foreground: #f4f4f5;
+  --card: rgba(20, 22, 28, 0.55);
+  --card-foreground: #f4f4f5;
+  --popover: rgba(16, 18, 23, 0.85);
+  --popover-foreground: #f4f4f5;
+  --primary: #d4d4d8;
+  --primary-foreground: #090a0d;
+  --secondary: rgba(28, 31, 38, 0.6);
+  --secondary-foreground: #e4e4e7;
+  --muted: rgba(24, 26, 32, 0.6);
+  --muted-foreground: #a1a1aa;
+  --accent: #e4e4e7;
+  --accent-foreground: #090a0d;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(255, 255, 255, 0.2);
   --radius: 1.25rem;
-  --primary-bright: oklch(0.68 0.25 335);
+  --primary-bright: #ffffff;
 }
 
 @theme inline {
@@ -64,13 +64,13 @@
     background-color: var(--background);
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-primary-bright/30 selection:text-white min-h-screen relative;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-white/20 selection:text-white min-h-screen relative;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(139, 28, 92, 0.25) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(76, 29, 149, 0.3) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, rgba(190, 24, 93, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(88, 28, 135, 0.25) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(157, 23, 77, 0.2) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgba(30, 32, 40, 0.5) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(20, 22, 28, 0.6) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(12, 13, 17, 0.8) 0px, transparent 60%),
+      radial-gradient(at 100% 100%, rgba(25, 28, 36, 0.5) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(15, 16, 20, 0.6) 0px, transparent 50%);
     background-attachment: fixed;
   }
   button {
@@ -80,21 +80,21 @@
 
 /* Liquid Glass utilities */
 .glass-panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
-              inset 1.5px 1.5px 0.5px 0 rgba(255, 255, 255, 0.35),
-              inset -1px -1px 0.5px 0.5px rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5),
+              inset 1px 1px 0.5px 0 rgba(255, 255, 255, 0.18),
+              inset -1px -1px 0.5px 0.5px rgba(255, 255, 255, 0.03);
 }
 
 .glass-dock {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4),
-              inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-              inset -1px -1px 1px 1px rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(30, 33, 42, 0.75) 0%, rgba(18, 20, 26, 0.85) 100%);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.6),
+              inset 1.5px 1.5px 0.5px 0 rgba(255, 255, 255, 0.25),
+              inset -1px -1px 1px 1px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes floatGlow {

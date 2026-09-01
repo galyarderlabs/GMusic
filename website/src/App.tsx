@@ -1,4 +1,3 @@
-
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   MusicNote01Icon,
@@ -15,7 +14,6 @@ import {
   WindowsOldIcon,
   Apple01Icon,
   GithubIcon,
-
   StarIcon,
   SourceCodeIcon,
   Download01Icon,
@@ -78,7 +76,7 @@ const FEATURES = [
 const EXTRAS = [
   { icon: KeyboardIcon, label: 'Global Media Keys' },
   { icon: LastFmIcon, label: 'Last.fm Scrobbler' },
-  { icon: Moon02Icon, label: 'Liquid Glass Themes' },
+  { icon: Moon02Icon, label: 'Obsidian Liquid Glass' },
   { icon: SparklesIcon, label: 'Discord Rich Presence' },
   { icon: RefreshIcon, label: 'Instant Auto-Updates' },
 ]
@@ -134,7 +132,7 @@ function Nav({ stars }: { stars: number | null }) {
           <img
             src={logo}
             alt="GMusic logo"
-            className="size-7 object-contain transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-[0_2px_8px_rgba(229,72,110,0.5)]"
+            className="size-7 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]"
           />
           <span className="font-heading text-lg font-bold text-white tracking-tight">
             GMusic
@@ -161,7 +159,7 @@ function Nav({ stars }: { stars: number | null }) {
             className="group flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-300 text-white/90 hover:text-white"
             style={{
               background: 'rgba(255, 255, 255, 0.08)',
-              boxShadow: 'inset 1px 1px 0.5px rgba(255, 255, 255, 0.25), 0 2px 8px rgba(0,0,0,0.2)',
+              boxShadow: 'inset 1px 1px 0.5px rgba(255, 255, 255, 0.25), 0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
             <HugeiconsIcon icon={GithubIcon} size={15} strokeWidth={2} />
@@ -190,14 +188,14 @@ function Hero({
 }) {
   return (
     <section className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden pt-28 pb-16">
-      {/* Ambient background glows */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-primary/25 blur-[140px] rounded-full animate-float-glow -z-10" />
-      <div className="pointer-events-none absolute top-1/3 -left-40 w-[500px] h-[500px] bg-accent/20 blur-[130px] rounded-full -z-10" />
-      <div className="pointer-events-none absolute top-1/2 -right-40 w-[500px] h-[500px] bg-purple-600/20 blur-[130px] rounded-full -z-10" />
+      {/* Subtle Dark Obsidian ambient background glows */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-white/[0.04] blur-[150px] rounded-full animate-float-glow -z-10" />
+      <div className="pointer-events-none absolute top-1/3 -left-40 w-[500px] h-[500px] bg-slate-800/20 blur-[140px] rounded-full -z-10" />
+      <div className="pointer-events-none absolute top-1/2 -right-40 w-[500px] h-[500px] bg-zinc-800/25 blur-[140px] rounded-full -z-10" />
 
       {!window.matchMedia('(prefers-reduced-motion: reduce)').matches && (
-        <div className="absolute inset-0 opacity-40 pointer-events-none -z-10" aria-hidden>
-          <Aurora colorStops={['#a3123f', '#7c1c4f', '#4c1d95']} amplitude={1.1} blend={0.6} speed={0.5} />
+        <div className="absolute inset-0 opacity-20 pointer-events-none -z-10" aria-hidden>
+          <Aurora colorStops={['#18181b', '#27272a', '#090a0d']} amplitude={0.8} blend={0.7} speed={0.3} />
         </div>
       )}
 
@@ -205,10 +203,10 @@ function Hero({
         <FadeContent duration={800}>
           <GlassBadge className="mb-6 border border-white/15">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-bright opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-bright"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
             </span>
-            <span className="text-white/90">GMusic Desktop · Liquid Glass Edition</span>
+            <span className="text-white/90">GMusic Desktop · Obsidian Glass</span>
           </GlassBadge>
         </FadeContent>
 
@@ -223,7 +221,7 @@ function Hero({
 
         <FadeContent duration={900} delay={350}>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
-            A native YouTube Music player sculpted with frosted liquid glass aesthetics, libmpv audio engine, and zero
+            A native YouTube Music player sculpted with dark obsidian glass aesthetics, libmpv audio engine, and zero
             ad interruptions. Lightweight on memory, heavy on craft.
           </p>
         </FadeContent>
@@ -250,8 +248,8 @@ function Hero({
         <AnimatedContent distance={60} duration={1} delay={0.2} scale={0.97} threshold={0}>
           <div className="mt-14 relative group">
             {/* Ambient specular frame glow */}
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-primary-bright/40 via-purple-500/30 to-pink-500/40 opacity-70 blur-xl transition-all duration-700 group-hover:opacity-100 group-hover:blur-2xl" />
-            
+            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-b from-white/15 via-white/5 to-transparent opacity-60 blur-xl transition-all duration-700 group-hover:opacity-90 group-hover:blur-2xl" />
+
             <div className="relative rounded-3xl overflow-hidden glass-panel p-2 sm:p-3 border border-white/20 shadow-2xl">
               <img
                 src={homeImg}
@@ -273,8 +271,8 @@ function Features() {
     <section id="features" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
         <div className="text-center">
-          <GlassBadge className="mb-3 text-primary-bright">ENGINEERED FOR LISTENERS</GlassBadge>
-          <h2 className="mx-auto mt-2 max-w-2xl font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+          <GlassBadge className="mb-3 text-white/90">ENGINEERED FOR LISTENERS</GlassBadge>
+          <h2 className="mx-auto mt-2 max-w-2xl font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl text-white">
             Everything You Wish YouTube Music Was
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
@@ -290,10 +288,10 @@ function Features() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className="flex size-12 items-center justify-center rounded-2xl text-primary-bright"
+                    className="flex size-12 items-center justify-center rounded-2xl text-white"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(229, 72, 110, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
-                      boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.3)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                      boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.25)',
                     }}
                   >
                     <HugeiconsIcon icon={f.icon} size={24} strokeWidth={2} />
@@ -310,13 +308,12 @@ function Features() {
         ))}
       </div>
 
-
       {/* Extras Pill Row */}
       <FadeContent duration={800} delay={150}>
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           {EXTRAS.map(e => (
             <GlassBadge key={e.label} className="py-2 px-4 gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
-              <HugeiconsIcon icon={e.icon} size={16} strokeWidth={1.8} className="text-primary-bright" />
+              <HugeiconsIcon icon={e.icon} size={16} strokeWidth={1.8} className="text-white/80" />
               <span>{e.label}</span>
             </GlassBadge>
           ))}
@@ -330,8 +327,8 @@ function Screens() {
   return (
     <section id="screens" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6">
       <div className="text-center mb-20">
-        <GlassBadge className="mb-3 text-primary-bright">VISUAL WORLD</GlassBadge>
-        <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
+        <GlassBadge className="mb-3 text-white/90">VISUAL WORLD</GlassBadge>
+        <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl text-white">
           Crafted Down to Every Specular Pixel
         </h2>
       </div>
@@ -345,7 +342,7 @@ function Screens() {
               }`}
             >
               <div className="lg:w-2/5 space-y-4">
-                <GlassBadge className="text-primary-bright">{s.badge}</GlassBadge>
+                <GlassBadge className="text-white/90">{s.badge}</GlassBadge>
                 <h3 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl text-white">
                   {s.title}
                 </h3>
@@ -355,7 +352,7 @@ function Screens() {
               </div>
 
               <div className="lg:w-3/5 relative group w-full">
-                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-primary-bright/20 to-purple-500/20 blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -inset-1 rounded-3xl bg-white/5 blur-lg opacity-40 group-hover:opacity-80 transition-opacity duration-500" />
                 <div className="relative rounded-3xl overflow-hidden glass-panel p-2 sm:p-3 border border-white/20">
                   <img
                     src={s.img}
@@ -419,8 +416,8 @@ function Download({ info, os }: { info: RepoInfo; os: string }) {
     <section id="download" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
       <FadeContent duration={800}>
         <div className="text-center">
-          <GlassBadge className="mb-3 text-primary-bright">INSTALLATION</GlassBadge>
-          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">Get GMusic Today</h2>
+          <GlassBadge className="mb-3 text-white/90">INSTALLATION</GlassBadge>
+          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl text-white">Get GMusic Today</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
             Free and open-source forever. No tracker telemetry, no ads. Just clean music playback.
           </p>
@@ -432,17 +429,17 @@ function Download({ info, os }: { info: RepoInfo; os: string }) {
           <AnimatedContent key={c.os} distance={40} duration={0.8} delay={i * 0.1} threshold={0.15}>
             <GlassCard
               className={`p-6 sm:p-8 flex flex-col justify-between h-full ${
-                c.detected ? 'ring-2 ring-primary-bright/60 shadow-[0_0_40px_rgba(229,72,110,0.2)]' : ''
+                c.detected ? 'ring-1 ring-white/30 shadow-[0_0_30px_rgba(255,255,255,0.06)]' : ''
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex size-11 items-center justify-center rounded-2xl text-primary-bright"
+                      className="flex size-11 items-center justify-center rounded-2xl text-white"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(229, 72, 110, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
-                        boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.3)',
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                        boxShadow: 'inset 1px 1px 1px rgba(255, 255, 255, 0.25)',
                       }}
                     >
                       <HugeiconsIcon icon={c.icon} size={22} strokeWidth={2} />
@@ -450,7 +447,7 @@ function Download({ info, os }: { info: RepoInfo; os: string }) {
                     <h3 className="font-heading text-xl font-bold text-white">{c.os}</h3>
                   </div>
                   {c.detected && (
-                    <span className="rounded-full bg-primary-bright/20 border border-primary-bright/30 px-3 py-1 text-xs font-semibold text-primary-bright">
+                    <span className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold text-white">
                       Your System
                     </span>
                   )}
@@ -461,7 +458,7 @@ function Download({ info, os }: { info: RepoInfo; os: string }) {
                     <a
                       key={l.label}
                       href={l.href ?? RELEASES_URL}
-                      className="group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
+                      className="group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:bg-white/10 hover:border-white/20"
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         boxShadow: 'inset 1px 1px 0.5px rgba(255, 255, 255, 0.15)',
@@ -472,7 +469,7 @@ function Download({ info, os }: { info: RepoInfo; os: string }) {
                         icon={Download01Icon}
                         size={16}
                         strokeWidth={2}
-                        className="text-muted-foreground group-hover:text-primary-bright group-hover:translate-y-0.5 transition-all"
+                        className="text-muted-foreground group-hover:text-white group-hover:translate-y-0.5 transition-all"
                       />
                     </a>
                   ))}
@@ -554,7 +551,7 @@ export default function App() {
         : '#download'
 
   return (
-    <div className="relative min-h-screen text-foreground antialiased selection:bg-primary/30 selection:text-white">
+    <div className="relative min-h-screen text-foreground antialiased selection:bg-white/20 selection:text-white">
       <GlassFilter />
       <Nav stars={info.stars} />
       <main>

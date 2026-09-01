@@ -74,17 +74,17 @@ export const GlassCard: React.FC<GlassEffectProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-3xl transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${className}`}
+      className={`group relative overflow-hidden rounded-3xl transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${className}`}
       style={{
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 12px 36px 0 rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.08)',
         ...style,
       }}
     >
       {/* Background blur & liquid distortion layer */}
       <div
-        className="absolute inset-0 -z-10 rounded-3xl backdrop-blur-xl"
+        className="absolute inset-0 -z-10 rounded-3xl backdrop-blur-2xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
+          background: 'linear-gradient(135deg, rgba(30, 34, 45, 0.45) 0%, rgba(15, 17, 22, 0.7) 100%)',
           ...(distort ? { filter: 'url(#glass-distortion)' } : {}),
         }}
       />
@@ -94,13 +94,12 @@ export const GlassCard: React.FC<GlassEffectProps> = ({
         className="pointer-events-none absolute inset-0 -z-10 rounded-3xl"
         style={{
           boxShadow:
-            'inset 1.5px 1.5px 0.5px 0 rgba(255, 255, 255, 0.35), inset -1px -1px 0.5px 0.5px rgba(255, 255, 255, 0.08)',
+            'inset 1px 1px 0.5px 0 rgba(255, 255, 255, 0.18), inset -1px -1px 0.5px 0.5px rgba(255, 255, 255, 0.04)',
         }}
       />
 
-      {/* Subtle chromatic sheen highlight on hover */}
+      {/* Subtle obsidian sheen highlight on hover */}
       <div className="pointer-events-none absolute -inset-full -z-10 opacity-0 transition-opacity duration-700 group-hover:opacity-100 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
-
       <div className="relative z-10">{children}</div>
     </div>
   )
@@ -121,23 +120,25 @@ export const GlassButton: React.FC<{
 
   const variantStyle: React.CSSProperties = isPrimary
     ? {
-        background: 'linear-gradient(135deg, rgba(163, 18, 63, 0.85) 0%, rgba(100, 10, 40, 0.9) 100%)',
+        background: 'linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%)',
+        color: '#090a0d',
         boxShadow:
-          '0 8px 24px -4px rgba(229, 72, 110, 0.5), inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.4), inset -1px -1px 1px rgba(0, 0, 0, 0.3)',
+          '0 8px 28px -4px rgba(255, 255, 255, 0.25), inset 1.5px 1.5px 1px #ffffff, inset -1px -1px 1px rgba(0, 0, 0, 0.15)',
       }
     : {
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
+        color: '#ffffff',
         boxShadow:
-          '0 8px 24px -4px rgba(0, 0, 0, 0.3), inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.3), inset -1px -1px 1px rgba(255, 255, 255, 0.05)',
+          '0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.2), inset -1px -1px 1px rgba(255, 255, 255, 0.03)',
       }
 
   const content = (
     <div
-      className={`${baseClasses} px-7 py-3.5 backdrop-blur-md hover:scale-[1.03] hover:shadow-[0_12px_32px_rgba(229,72,110,0.4)] ${className}`}
+      className={`${baseClasses} px-7 py-3.5 backdrop-blur-md hover:scale-[1.03] hover:shadow-[0_12px_32px_rgba(255,255,255,0.2)] ${className}`}
       style={variantStyle}
     >
       {/* Specular sheen layer */}
-      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-full" />
+      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-full" />
       <div className="relative z-10 flex items-center gap-2">{children}</div>
     </div>
   )
@@ -160,9 +161,9 @@ export const GlassBadge: React.FC<{
   <div
     className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-lg ${className}`}
     style={{
-      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%)',
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
       boxShadow:
-        '0 4px 16px 0 rgba(0, 0, 0, 0.2), inset 1px 1px 0.5px rgba(255, 255, 255, 0.4), inset -0.5px -0.5px 0.5px rgba(255, 255, 255, 0.1)',
+        '0 4px 16px 0 rgba(0, 0, 0, 0.3), inset 1px 1px 0.5px rgba(255, 255, 255, 0.25), inset -0.5px -0.5px 0.5px rgba(255, 255, 255, 0.05)',
     }}
   >
     {children}
