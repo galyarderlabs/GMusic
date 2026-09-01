@@ -8,11 +8,17 @@ fn main() {
         for line in keys.lines() {
             if let Some((k, v)) = line.split_once('=') {
                 let (k, v) = (k.trim(), v.trim());
-                if k == "LIMUSIC_LASTFM_API_KEY" || k == "LIMUSIC_LASTFM_API_SECRET" {
+                if k == "LIMUSIC_LASTFM_API_KEY" || k == "LIMUSIC_LASTFM_API_SECRET" || k == "LASTFM_API_KEY" || k == "LASTFM_API_SECRET" {
                     println!("cargo:rustc-env={k}={v}");
                 }
             }
         }
+    }
+    if let Ok(v) = std::env::var("LASTFM_API_KEY") {
+        println!("cargo:rustc-env=LASTFM_API_KEY={v}");
+    }
+    if let Ok(v) = std::env::var("LASTFM_API_SECRET") {
+        println!("cargo:rustc-env=LASTFM_API_SECRET={v}");
     }
     tauri_build::build()
 }
