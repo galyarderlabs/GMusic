@@ -27,7 +27,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-REPO="SimoHypers/limusic"
+REPO="galyarderlabs/GMusic"
 KEY="${TAURI_SIGNING_PRIVATE_KEY_FILE:-$HOME/.tauri/limusic.key}"
 NOTES="${1:-See the commit history for changes.}"
 

@@ -12,10 +12,10 @@
   <img alt="License" src="https://img.shields.io/github/license/galyarderlabs/GMusic?style=for-the-badge&color=1881cc">
   <br>
   <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
+  <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white">
   <img src="https://img.shields.io/badge/Tauri_2-24C8D8?style=for-the-badge&logo=tauri&logoColor=white">
   <img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white">
   <img src="https://img.shields.io/badge/Svelte_5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white">
-</p>
 
 </div>
 
@@ -41,21 +41,25 @@ GMusic is a high-performance desktop client for YouTube Music based on [Limusic]
 
 ## Download & Install
 
-### Linux (.deb)
+### Windows (.exe / .msi)
 
-Download the latest `.deb` package from [**Releases**](https://github.com/galyarderlabs/GMusic/releases/latest) and install:
+Download the latest setup installer (`.exe` or `.msi`) from [**Releases**](https://github.com/galyarderlabs/GMusic/releases/latest) and run the installer.
+
+### Linux (.deb & AppImage)
+
+Download the latest `.deb` or `.AppImage` package from [**Releases**](https://github.com/galyarderlabs/GMusic/releases/latest):
 
 ```bash
-# Install with dpkg
+# Install .deb with dpkg
 sudo dpkg -i GMusic_*.deb
 
-# Or install in user-space (rootless, no sudo)
-# Extract and place in ~/.local/opt/gmusic
+# Or run the AppImage
+chmod +x GMusic_*.AppImage
+./GMusic_*.AppImage
 ```
+### Linux Runtime Dependencies
 
-### Runtime Dependencies
-
-GMusic requires `libmpv` for audio playback:
+On Linux, GMusic requires `libmpv` for audio playback (Windows installers bundle it automatically):
 
 ```bash
 # Fedora
@@ -67,7 +71,6 @@ sudo apt install libmpv2
 # Arch
 sudo pacman -S mpv
 ```
-
 ---
 
 ## Build from Source
