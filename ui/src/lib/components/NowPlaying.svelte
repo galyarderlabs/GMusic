@@ -121,7 +121,7 @@
 			src={srcs[2]}
 			alt=""
 			onerror={() => (bgFailed = true)}
-			class="pointer-events-none absolute inset-0 h-full w-full art-wash scale-110 object-cover opacity-30 blur-2xl dark:opacity-40"
+			class="pointer-events-none absolute inset-0 h-full w-full art-wash glass-distort scale-110 object-cover opacity-30 blur-2xl dark:opacity-40"
 		/>
 	{/if}
 

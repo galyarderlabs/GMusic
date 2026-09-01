@@ -99,7 +99,7 @@
 </script>
 
 <aside
-	class="flex h-full w-16 shrink-0 flex-col border-r bg-sidebar p-3 text-sidebar-foreground {wide(
+	class="flex h-full w-16 shrink-0 flex-col border-r bg-sidebar p-3 text-sidebar-foreground glass-surface glass-border {wide(
 		'lg:w-60'
 	)}"
 >

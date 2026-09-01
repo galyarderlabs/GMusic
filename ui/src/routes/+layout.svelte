@@ -242,3 +242,12 @@
 		</div>
 	{/if}
 {/if}
+
+<!-- Liquid Glass SVG filter — only consumed when .theme-glass is active -->
+<svg style="display:none" aria-hidden="true">
+	<filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+		<feTurbulence type="fractalNoise" baseFrequency="0.003 0.006" numOctaves="1" seed="17" result="turb" />
+		<feGaussianBlur in="turb" stdDeviation="4" result="soft" />
+		<feDisplacementMap in="SourceGraphic" in2="soft" scale="8" xChannelSelector="R" yChannelSelector="G" />
+	</filter>
+</svg>

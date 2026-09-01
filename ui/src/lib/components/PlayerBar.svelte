@@ -138,7 +138,7 @@
 <footer
 	onpointerdown={(e) => (pressedControl = isControl(e.target))}
 	onclick={onBarClick}
-	class="flex items-center gap-2 border-t bg-card px-2 py-2.5 sm:gap-4 sm:px-4 sm:py-3"
+	class="flex items-center gap-2 border-t bg-card px-2 py-2.5 sm:gap-4 sm:px-4 sm:py-3 glass-surface glass-border"
 >
 	<!-- Now playing. data-ctx: right-clicking the cover or the title opens the ⋮ menu for the track
 	     that's playing (not the buttons beside them — those keep their own meaning). -->
