@@ -59,10 +59,16 @@ jobs:
             REF="${{ inputs.custom_ref }}"
             TAG="$REF"
             TITLE="GMusic $TAG"
-          elif [ "$TARGET" = "latest-commit" ]; then
-            # Merge latest upstream commits into current GMusic tree
+            # Merge latest upstream commits into current GMusic tree with -X ours fallback
             echo "Merging latest upstream commits from SimoHypers/limusic:master..."
-            git merge --no-edit upstream/master || true
+            if ! git merge --no-edit upstream/master; then
+              echo "Standard merge had conflicts, retrying with recursive -X ours strategy..."
+              git merge --abort || true
+              git merge -X ours --no-edit upstream/master || {
+                echo "Error: Unresolvable merge conflict encountered."
+                exit 1
+              }
+            fi
             
             UPSTREAM_SHA=$(git rev-parse upstream/master)
             SHORT_SHA="${UPSTREAM_SHA:0:7}"
@@ -141,7 +147,7 @@ jobs:
         if: steps.check_release.outputs.skip != 'true'
         run: |
           cd ui
-          pnpm install --frozen-lockfile
+          pnpm install --no-frozen-lockfile
           pnpm build
 
       - name: Install Tauri CLI
