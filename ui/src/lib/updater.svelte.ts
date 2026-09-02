@@ -7,7 +7,7 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
 import { toast } from './player.svelte';
 import { t } from './i18n.svelte';
-import { canSelfUpdate, getSettings, openExternal } from './api';
+import { canSelfUpdate, getSettings, openExternal, releaseNotes } from './api';
 
 const RELEASES_URL = 'https://github.com/galyarderlabs/GMusic/releases/latest';
 
@@ -42,7 +42,6 @@ function isNewerVersion(remoteTag: string, currentVer: string): boolean {
 		if (cleanCurrent.startsWith('nightly-')) {
 			return cleanRemote > cleanCurrent;
 		}
-		// If running regular release (e.g. 0.6.7) and remote is nightly of 0.6.7, don't nag
 		return false;
 	}
 
@@ -67,6 +66,13 @@ async function look(): Promise<boolean> {
 		// Fallback to checking GitHub Releases API
 		try {
 			const currentVer = await getVersion().catch(() => '0.6.7');
+			const notes = await releaseNotes().catch(() => []);
+			const latest = notes[0]?.version;
+			if (latest && isNewerVersion(latest, currentVer)) {
+				updateState.canInstall = false;
+				updateState.available = { version: latest.replace(/^v/, '') };
+				return true;
+			}
 			const res = await fetch('https://api.github.com/repos/galyarderlabs/GMusic/releases/latest', {
 				headers: { Accept: 'application/vnd.github+json' }
 			});

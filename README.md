@@ -58,6 +58,7 @@ sudo dpkg -i GMusic_*.deb
 chmod +x GMusic_*.AppImage
 ./GMusic_*.AppImage
 ```
+
 ### Linux Runtime Dependencies
 
 On Linux, GMusic requires `libmpv` for audio playback (Windows installers bundle it automatically):
@@ -72,6 +73,7 @@ sudo apt install libmpv2
 # Arch
 sudo pacman -S mpv
 ```
+
 ---
 
 ## Build from Source
