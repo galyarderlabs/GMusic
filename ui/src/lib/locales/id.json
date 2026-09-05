@@ -76,7 +76,8 @@
 		"choose_channel": "Pilih channel YouTube",
 		"choose_channel_desc": "Koleksi, suka, dan playlist akan menggunakan channel ini. Anda bisa menggantinya lagi nanti.",
 		"cancel_sign_in": "Batalkan masuk",
-		"sign_in_hint": "Masuk dengan akun Google Anda untuk mengakses koleksi dan playlist YouTube Music."
+		"sign_in_hint": "Masuk dengan akun Google Anda untuk mengakses koleksi dan playlist YouTube Music.",
+		"history": "Riwayat"
 	},
 	"player": {
 		"play": "Putar",
@@ -152,6 +153,8 @@
 	"artist": {
 		"subscribe": "Langganan",
 		"subscribed": "Berlangganan",
+		"subscribe_to": "Langganan {name}",
+		"unsubscribe_from": "Batal langganan {name}",
 		"top_songs": "Lagu teratas"
 	},
 	"library": {
@@ -186,7 +189,8 @@
 		"every_song_saved": "Semua lagu yang Anda simpan dalam satu daftar",
 		"every_upload": "Semua lagu yang Anda upload ke YouTube Music",
 		"no_uploads": "Belum ada yang diupload. Lagu yang Anda upload di music.youtube.com akan muncul di sini.",
-		"uploads_signed_out": "Masuk untuk melihat musik yang Anda upload ke YouTube Music."
+		"uploads_signed_out": "Masuk untuk melihat musik yang Anda upload ke YouTube Music.",
+		"no_upload_albums": "Belum ada album yang diupload. Album yang Anda upload di music.youtube.com akan muncul di sini."
 	},
 	"local": {
 		"scanning": "Memindai folder...",
@@ -316,6 +320,8 @@
 			"check_updates": "Periksa pembaruan",
 			"checking_updates": "Memeriksa pembaruan...",
 			"up_to_date": "Anda menggunakan versi terbaru.",
+			"update_check_failed": "Gagal memeriksa pembaruan: {error}",
+			"update_packaged": "Versi ini dipasang dengan package manager, perbarui lewat cara yang sama.",
 			"update_available": "Versi {version} tersedia!",
 			"install_update": "Pasang dan Mulai Ulang",
 			"download_page": "Buka halaman unduhan",
@@ -551,5 +557,14 @@
 		"already_in": "Sudah ada di {playlist}",
 		"added_songs": "Menambahkan {count} lagu ke {playlist}",
 		"added_one": "Menambahkan ke {playlist}"
+	},
+	"history": {
+		"title": "Riwayat",
+		"subtitle": "Semua yang pernah Anda putar di YouTube Music, dari yang terbaru.",
+		"search": "Cari riwayat Anda",
+		"matching": "{count} cocok",
+		"songs_count": "{count} lagu",
+		"empty": "Belum ada apa-apa di sini. Apa pun yang Anda putar saat masuk akan muncul di halaman ini.",
+		"signed_out": "Masuk untuk melihat riwayat mendengarkan YouTube Music Anda."
 	}
 }
