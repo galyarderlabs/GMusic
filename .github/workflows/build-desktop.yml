@@ -161,7 +161,7 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         run: |
-          tauri build --bundles deb,appimage
+          tauri build --bundles deb,appimage --config '{"build":{"beforeBuildCommand":""}}'
 
       - name: Prepare Release Artifacts
         if: steps.check_release.outputs.skip != 'true'
