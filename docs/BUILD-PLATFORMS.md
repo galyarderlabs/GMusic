@@ -86,8 +86,10 @@ cargo tauri build --bundles deb   # → target/release/bundle/deb/limusic_*.deb
    ```
    (The Rust side only emits `cargo:rustc-link-lib=mpv` — pregenerated bindings, so the headers
    aren't needed at build time.)
-4. **Point the linker at it:** `$env:RUSTFLAGS = "-L native=C:\path\to\libmpv"` (or
-   `src-tauri/.cargo/config.toml` → `[build] rustflags = ["-L", "C:\\path\\to\\libmpv"]`).
+4. **Point the linker at it:** `$env:RUSTFLAGS = "-L native=C:\path\to\libmpv"` (or, to keep it
+   set for every build, `%USERPROFILE%\.cargo\config.toml` →
+   `[build] rustflags = ["-L", "C:\\path\\to\\libmpv"]`). This config is machine-specific, so it
+   lives in the user-level Cargo config, never in the repo.
 5. **Bundle the DLL:** copy `libmpv-2.dll` into `src-tauri/` (it is listed under
    `tauri.windows.conf.json` → `bundle.resources`, so the installer places it next to the exe).
    It's ~117 MB — gitignored, never commit it.
@@ -113,14 +115,14 @@ cargo tauri build --bundles deb   # → target/release/bundle/deb/limusic_*.deb
    Apple Silicon `/opt/homebrew`):
    ```bash
    export LIBRARY_PATH="$(brew --prefix)/lib:$LIBRARY_PATH"
-   # or src-tauri/.cargo/config.toml → [build] rustflags = ["-L", "/opt/homebrew/lib"]
+   # or ~/.cargo/config.toml → [build] rustflags = ["-L", "<brew --prefix>/lib"]
    ```
 4. **Build:**
    ```bash
    cd ui && pnpm build && cd ..
    cargo tauri build          # → target/release/bundle/{macos,dmg}/limusic.{app,dmg}
    ```
-5. **Bundle the dylibs, all of them, then re-sign.** What comes out of step 4 runs on *your* machine
+5. **Bundle the dylibs, all of them.** What comes out of step 4 runs on *your* machine
    only: the binary links `libmpv.2.dylib` by its absolute Homebrew path, and libmpv in turn links
    about forty more Homebrew dylibs (all of ffmpeg, libass, libplacebo, uchardet) the same way.
    `install_name_tool` on libmpv alone fixes one edge of that graph and leaves the rest, so use
@@ -128,25 +130,71 @@ cargo tauri build --bundles deb   # → target/release/bundle/deb/limusic_*.deb
    ```bash
    brew install dylibbundler
    APP=target/release/bundle/macos/limusic.app
-   dylibbundler -cd -of -b -x "$APP/Contents/MacOS/limusic" \
+   # The executable is NOT named after the bundle: productName names the .app, the cargo package
+   # names the binary (limusic-app). Ask the bundle rather than guessing.
+   BIN="$APP/Contents/MacOS/$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")"
+   dylibbundler -cd -of -b -x "$BIN" \
      -d "$APP/Contents/Frameworks" -p "@executable_path/../Frameworks" -s "$(brew --prefix)/lib"
-   codesign --force --deep --sign - "$APP"     # NOT optional, see below
    ```
    Check the result with `find "$APP" -type f -exec otool -L {} + | grep /opt/homebrew`. Anything
    it prints is a library the app will fail to find on someone else's Mac; CI runs exactly that as
    a build guard.
-6. **The re-sign is mandatory on Apple Silicon.** arm64 macOS refuses to execute a Mach-O with no
-   valid signature, the linker's ad-hoc one is invalidated by every install-name rewrite above, and
-   the symptom is the app dying instantly with `Killed: 9`. Ad-hoc (`--sign -`) is enough to run;
-   it is not enough to satisfy Gatekeeper on a downloaded app (see `RELEASING.md` §6).
+6. **Drop the duplicate rpaths dylibbundler leaves behind.** It rewrites *every* `LC_RPATH` it
+   finds to the `-p` prefix, and Homebrew's libmpv ships two of them (the Xcode Swift toolchain and
+   `/usr/lib/swift`). Both come out as `@executable_path/../Frameworks/`, and dyld refuses to load
+   a Mach-O that lists one rpath twice, so the app dies the moment it starts:
+   ```
+   Library not loaded: @executable_path/../Frameworks/libmpv.2.dylib
+   Reason: tried: '.../Contents/Frameworks/libmpv.2.dylib'
+           (duplicate LC_RPATH '@executable_path/../Frameworks/')
+   ```
+   `otool -L` and `codesign --verify` both stay clean through this, so the Homebrew guard above
+   will not catch it. `-delete_rpath` removes one entry per call:
+   ```bash
+   install_name_tool -delete_rpath '@executable_path/../Frameworks/' \
+     "$APP/Contents/Frameworks/libmpv.2.dylib"
+   ```
+   To find every offender rather than just libmpv, and to check the fix afterwards:
+   ```bash
+   find "$APP" -type f -print0 | while IFS= read -r -d '' f; do
+     otool -l "$f" 2>/dev/null \
+       | awk '/LC_RPATH/{g=1} g&&/^[[:space:]]*path /{sub(/^[[:space:]]*path /, ""); sub(/ \(offset [0-9]+\)$/, ""); print; g=0}' \
+       | sort | uniq -d | sed "s|^|${f#$APP/} <- |"
+   done
+   ```
+   CI does both, in `Drop the duplicate rpaths dylibbundler leaves behind` and
+   `Check no Mach-O lists a duplicate rpath`.
+7. **Re-sign, and it is mandatory on Apple Silicon.**
+   ```bash
+   codesign --force --deep --sign - "$APP"
+   codesign --verify --deep --strict "$APP"
+   ```
+   arm64 macOS refuses to execute a Mach-O with no valid signature, the linker's ad-hoc one is
+   invalidated by every install-name and rpath rewrite above, and the symptom is the app dying
+   instantly with `Killed: 9`. Ad-hoc (`--sign -`) is enough to run; it is not enough to satisfy
+   Gatekeeper on a downloaded app (see `RELEASING.md` §6).
+8. **Smoke-test the bundle before believing it.** Every failure above looks identical from the
+   Finder (the icon bounces once and goes away), so run the binary in a terminal, where dyld says
+   what it could not load:
+   ```bash
+   "$APP/Contents/MacOS/$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")"
+   ```
 - `bundle.macOS.minimumSystemVersion` is **14.0** because Homebrew bottles are built per macOS
   version, so whatever the CI runner ships is the floor. It tracks `runs-on` in the workflow.
 - Media keys use **MPNowPlayingInfoCenter / MPRemoteCommandCenter** (Control Center + the Now
   Playing widget). Works from the `.app` bundle; a bare binary run won't register.
-- **Login is currently broken on macOS.** `session.rs::read_login_cookies` uses `cookies_for_url`,
-  which on WKWebView matches the cookie's host exactly, so YouTube's `.youtube.com` cookies never
-  match `music.youtube.com` and the jar comes back empty. WebKitGTK does real domain matching, which
-  is why Linux is unaffected.
+- **`src-tauri/tauri.macos.conf.json` is a full copy of the window config, not a patch.** Tauri
+  merges the platform config with RFC 7386 JSON Merge Patch, and that **replaces arrays wholesale**,
+  so the `windows` entry there has to repeat every key from `tauri.conf.json` (size, minimums,
+  `visible: false`, `dragDropEnabled`) on top of the macOS overrides: `decorations: true`,
+  `transparent: false`, `titleBarStyle: "Overlay"`, `hiddenTitle: true`. That is what puts the
+  traffic lights over the app's own titlebar (issue #65). **Change the window geometry in
+  `tauri.conf.json` and you must mirror it here**, or macOS silently keeps the old numbers.
+- **Login works, but not via `cookies_for_url`.** WKWebView's implementation compares the cookie's
+  domain to the URL's host with `==`, so YouTube's `.youtube.com` cookies never match
+  `music.youtube.com` and the jar came back empty (no SAPISID, so sign-in gave up silently).
+  `session.rs::youtube_cookie_header` therefore domain-matches by hand. WebKitGTK matches properly,
+  which is why Linux never saw this. Fixed in d18ed4a; don't reintroduce `cookies_for_url` here.
 
 ---
 

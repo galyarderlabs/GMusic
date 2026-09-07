@@ -9,7 +9,10 @@
 		PlayCircleIcon,
 		Database02Icon,
 		InformationCircleIcon,
-		KeyboardIcon
+		KeyboardIcon,
+		Cancel01Icon as RemoveIcon,
+		Copy01Icon,
+		Coffee02Icon
 	} from '@hugeicons/core-free-icons';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -18,10 +21,11 @@
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Select from '$lib/components/ui/select';
-	import { MOD } from '$lib/shortcuts';
+	import { HELP_COMBO } from '$lib/shortcuts';
 	import { copyText } from '$lib/clipboard';
 	import * as api from '$lib/api';
-	import { prefs, ui, toast } from '$lib/player.svelte';
+	import { blocked, prefs, ui, toast, unblockArtist } from '$lib/player.svelte';
+	import { win } from '$lib/win.svelte';
 	import ColorPicker from '$lib/components/ColorPicker.svelte';
 	import Changelog from '$lib/components/Changelog.svelte';
 	import {
@@ -55,6 +59,7 @@
 	} from '$lib/updater.svelte';
 	import { getVersion } from '@tauri-apps/api/app';
 	import { t, setLocale, currentLocale, LOCALES, type LocaleId } from '$lib/i18n.svelte';
+	import { appIcon, chooseAppIcon } from '$lib/appicon.svelte';
 
 	type TabId = 'general' | 'themes' | 'playback' | 'data' | 'about';
 	const TABS = $derived<{ id: TabId; label: string; hint: string; icon: typeof Settings02Icon }[]>([
@@ -116,6 +121,28 @@
 		}
 	}
 
+	async function pickAppIcon() {
+		try {
+			const picked = await open({
+				title: t('settings.themes.app_icon_dialog'),
+				filters: [{ name: t('settings.themes.app_icon_filter'), extensions: ['png'] }]
+			});
+			if (typeof picked !== 'string') return;
+			await chooseAppIcon(picked);
+			toast.success(t('toasts.app_icon_set'));
+		} catch (e) {
+			toast.error(String(e));
+		}
+	}
+
+	async function resetAppIcon() {
+		try {
+			await chooseAppIcon(null);
+		} catch (e) {
+			toast.error(String(e));
+		}
+	}
+
 	function chooseFont(key: FontKey, value: string) {
 		isCustomFont[key] = value === 'custom';
 		if (value === 'custom') fontName[key] = familyName(effective[key]);
@@ -149,6 +176,20 @@
 	let settings = $state<Record<string, string>>({});
 	let clients = $state<string[]>([]);
 	let proxyInput = $state('');
+	/// How many blocked artists the section shows before the "show all" toggle. The list is never
+	/// truncated, only collapsed: a long one would otherwise push Lyrics and Advanced off the tab.
+	const BLOCKED_PREVIEW = 5;
+	let showAllBlocked = $state(false);
+	/// Export: the stored value verbatim, so it can be pasted into another player or back into a
+	/// fresh install. No file format for a list of a dozen names.
+	async function copyBlocked() {
+		try {
+			await copyText(JSON.stringify(blocked.artists, null, 2));
+			toast(t('toasts.blocked_copied', { count: blocked.artists.length }));
+		} catch {
+			toast(t('toasts.could_not_copy_link'));
+		}
+	}
 	let loaded = $state(false);
 	let clearing = $state(false);
 	let version = $state('');
@@ -262,6 +303,10 @@
 	const discordOn = $derived(settings.discord_rpc === 'true');
 	const trayOn = $derived(settings.close_to_tray !== 'false');
 	const autostartOn = $derived(settings.autostart === 'true');
+	// `native_chrome` is read-only and platform-derived (commands.rs). `overlay` is macOS, where the
+	// traffic lights are fixed at window creation and there is nothing to offer the user (#65).
+	const systemTitlebarOn = $derived(settings.native_chrome !== 'off');
+	const systemTitlebarFixed = $derived(settings.native_chrome === 'overlay');
 	const disabled = $derived(
 		new Set(
 			(settings.disabled_stream_clients ?? '')
@@ -336,6 +381,21 @@
 	async function setTray(on: boolean) {
 		settings.close_to_tray = on ? 'true' : 'false';
 		await api.setSetting('close_to_tray', settings.close_to_tray);
+	}
+
+	// The backend flips the real window decorations; `win.chrome` is what the SPA keys its own
+	// corner rounding, resize borders and window buttons off, so it has to move with it.
+	async function setSystemTitlebar(on: boolean) {
+		const prev = win.chrome;
+		settings.native_chrome = on ? 'on' : 'off';
+		win.chrome = on ? 'on' : 'off';
+		try {
+			await api.setSetting('system_titlebar', on ? 'true' : 'false');
+		} catch (e) {
+			settings.native_chrome = prev;
+			win.chrome = prev;
+			toast.error(String(e));
+		}
 	}
 
 	async function setAutostart(on: boolean) {
@@ -470,7 +530,7 @@
 						>
 							<HugeiconsIcon icon={KeyboardIcon} class="h-3.5 w-3.5" />
 							<span
-								>{shortcutsHint[0]}<kbd class="font-mono font-medium">{MOD}H</kbd>{shortcutsHint[1] ??
+								>{shortcutsHint[0]}<kbd class="font-mono font-medium">{HELP_COMBO}</kbd>{shortcutsHint[1] ??
 									''}</span
 							>
 						</button>
@@ -512,6 +572,13 @@
 									desc: t('settings.general.autostart_hint'),
 									control: autostartSwitch
 								})}
+								{#if !systemTitlebarFixed}
+									{@render row({
+										title: t('settings.general.system_titlebar'),
+										desc: t('settings.general.system_titlebar_hint'),
+										control: systemTitlebarSwitch
+									})}
+								{/if}
 							</div>
 						</section>
 					{:else if tab === 'themes'}
@@ -541,6 +608,11 @@
 									title: t('settings.themes.roundness'),
 									desc: t('settings.themes.roundness_hint'),
 									control: radiusSlider
+								})}
+								{@render row({
+									title: t('settings.themes.app_icon'),
+									desc: t('settings.themes.app_icon_hint'),
+									control: appIconButtons
 								})}
 							</div>
 						</section>
@@ -650,6 +722,16 @@
 							</div>
 						</section>
 						<section class={GROUP}>
+							<h3 class={LABEL}>{t('settings.sections.blocked')}</h3>
+							<div class={CARD}>
+								{@render row({
+									title: t('settings.playback.blocked_artists'),
+									desc: t('settings.playback.blocked_artists_hint'),
+									below: blockedList
+								})}
+							</div>
+						</section>
+						<section class={GROUP}>
 							<h3 class={LABEL}>{t('settings.sections.lyrics')}</h3>
 							<div class={CARD}>
 								{@render row({
@@ -705,6 +787,18 @@
 								{t('settings.about.description')}
 							</p>
 						</div>
+
+						<section class={GROUP}>
+							<h3 class={LABEL}>{t('settings.sections.support')}</h3>
+							<div class={CARD}>
+								{@render row({
+									title: t('settings.about.kofi'),
+									desc: t('settings.about.kofi_hint'),
+									control: kofiButton,
+									tall: true
+								})}
+							</div>
+						</section>
 
 						<section class={GROUP}>
 							<h3 class={LABEL}>{t('settings.sections.updates')}</h3>
@@ -792,6 +886,10 @@
 {#snippet discordSwitch()}<Switch checked={discordOn} onCheckedChange={setDiscord} />{/snippet}
 {#snippet traySwitch()}<Switch checked={trayOn} onCheckedChange={setTray} />{/snippet}
 {#snippet autostartSwitch()}<Switch checked={autostartOn} onCheckedChange={setAutostart} />{/snippet}
+{#snippet systemTitlebarSwitch()}<Switch
+		checked={systemTitlebarOn}
+		onCheckedChange={setSystemTitlebar}
+	/>{/snippet}
 {#snippet autoplaySwitch()}<Switch checked={autoplayOn} onCheckedChange={setAutoplay} />{/snippet}
 {#snippet dupSwitch()}<Switch
 		checked={preventDuplicatesOn}
@@ -958,6 +1056,14 @@
 	{/if}
 {/snippet}
 
+{#snippet appIconButtons()}
+	<div class="flex shrink-0 items-center gap-2">
+		<img src={appIcon.src} alt="" class="size-7 rounded" />
+		<Button variant="outline" size="sm" onclick={pickAppIcon}>{t('settings.themes.app_icon_pick')}</Button>
+		<Button variant="ghost" size="sm" onclick={resetAppIcon}>{t('common.reset')}</Button>
+	</div>
+{/snippet}
+
 {#snippet addFontButton()}
 	<Button variant="outline" size="sm" class="shrink-0" onclick={pickFontFiles}>{t('settings.themes.add_font')}</Button>
 {/snippet}
@@ -1032,6 +1138,49 @@
 	</div>
 {/snippet}
 
+{#snippet blockedList()}
+	{#if !blocked.artists.length}
+		<p class="text-xs leading-relaxed text-muted-foreground">
+			{t('settings.playback.blocked_artists_empty')}
+		</p>
+	{:else}
+		<div class="flex flex-col gap-2">
+			{#each showAllBlocked ? blocked.artists : blocked.artists.slice(0, BLOCKED_PREVIEW) as entry (entry.id ?? entry.name)}
+				<div class="flex items-center justify-between gap-2 rounded-lg bg-muted/60 py-1.5 pr-1.5 pl-3">
+					<span class="truncate text-xs">{entry.name}</span>
+					<Button
+						variant="ghost"
+						size="icon"
+						class="h-7 w-7 shrink-0"
+						aria-label={t('settings.playback.blocked_artists_remove', { name: entry.name })}
+						onclick={() => unblockArtist(entry)}
+					>
+						<HugeiconsIcon icon={RemoveIcon} class="h-3.5 w-3.5" />
+					</Button>
+				</div>
+			{/each}
+		</div>
+		<div class="mt-2 flex items-center gap-1">
+			{#if blocked.artists.length > BLOCKED_PREVIEW}
+				<Button
+					variant="ghost"
+					size="sm"
+					class="h-7 px-2 text-xs"
+					onclick={() => (showAllBlocked = !showAllBlocked)}
+				>
+					{showAllBlocked
+						? t('settings.playback.blocked_artists_show_less')
+						: t('settings.playback.blocked_artists_show_all', { count: blocked.artists.length })}
+				</Button>
+			{/if}
+			<Button variant="ghost" size="sm" class="ml-auto h-7 gap-1.5 px-2 text-xs" onclick={copyBlocked}>
+				<HugeiconsIcon icon={Copy01Icon} class="h-3.5 w-3.5" />
+				{t('settings.playback.blocked_artists_copy')}
+			</Button>
+		</div>
+	{/if}
+{/snippet}
+
 {#snippet proxyForm()}
 	<form
 		class="flex gap-2"
@@ -1065,6 +1214,13 @@
 
 {#snippet reportButton()}
 	<Button size="sm" onclick={openBugForm}>{t('settings.about.report_issue_button')}</Button>
+{/snippet}
+
+{#snippet kofiButton()}
+	<Button variant="secondary" size="sm" onclick={() => api.openExternal('https://ko-fi.com/simohypers')}>
+		<HugeiconsIcon icon={Coffee02Icon} size={15} strokeWidth={1.8} />
+		{t('settings.about.kofi_button')}
+	</Button>
 {/snippet}
 
 {#snippet diagAlert()}

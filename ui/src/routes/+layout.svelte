@@ -20,6 +20,7 @@
 		refreshArtworkAccent,
 		initTheme
 	} from '$lib/theme.svelte';
+	import { loadAppIcon } from '$lib/appicon.svelte';
 	import { thumb } from '$lib/thumb';
 	import { t } from '$lib/i18n.svelte';
 	import { blockForeignDrag, dragScroll } from '$lib/dnd';
@@ -100,13 +101,23 @@
 
 	// Apply the saved accent color before the first paint (ssr=false → nothing renders until now).
 	if (browser) initTheme();
+	// The custom app icon (#173) is a file on disk, so the titlebar has to ask Rust for it.
+	if (browser) loadAppIcon();
 
 	// Wire the Tauri event bridge once for the whole app; teardown on destroy. Check for an update
 	// on every app open (silent unless one exists).
 	onMount(() => {
 		// Before the mini-window bail-out: both windows run this SPA and both can throw.
 		initErrorLog();
-		if (isMini) return initApp(true);
+		if (isMini) {
+			// The widget gets the transport keys too. No zoom: it is a fixed-size card.
+			const teardownMiniApp = initApp(true);
+			const teardownMiniKeys = initShortcuts(true);
+			return () => {
+				teardownMiniApp();
+				teardownMiniKeys();
+			};
+		}
 		// First: it reveals the window (see initWin).
 		const teardownWin = initWin();
 		checkForUpdatesQuiet();
@@ -146,12 +157,16 @@
 	<!-- The window itself is transparent; this root paints the background and, when not maximized,
 	     rounds the corners (the compositor can't round an undecorated window for us). Theater mode
 	     counts as maximized here: it is fullscreen, and rounding it clips the corners of a view that
-	     is meant to reach every edge (#139). -->
+	     is meant to reach every edge (#139). With a system frame (win.chrome) the compositor rounds
+	     for us, so ours would only fight it.
+	     12px, not `rounded-lg`: that resolves to --radius, which every theme sets differently, so
+	     the window corner used to change with the theme. This is the GNOME/Adwaita value (#65). -->
 	<div
 		class="flex h-screen flex-col overflow-hidden bg-background text-foreground {win.maximized ||
-		ui.theaterOpen
+		ui.theaterOpen ||
+		win.chrome !== 'off'
 			? ''
-			: 'rounded-lg'}"
+			: 'rounded-[12px]'}"
 	>
 		<ResizeBorders />
 		<Titlebar />

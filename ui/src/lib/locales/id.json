@@ -77,7 +77,12 @@
 		"choose_channel_desc": "Koleksi, suka, dan playlist akan menggunakan channel ini. Anda bisa menggantinya lagi nanti.",
 		"cancel_sign_in": "Batalkan masuk",
 		"sign_in_hint": "Masuk dengan akun Google Anda untuk mengakses koleksi dan playlist YouTube Music.",
-		"history": "Riwayat"
+		"history": "Riwayat",
+		"add_account": "Tambah akun",
+		"remove_account": "Hapus akun",
+		"remove_account_title": "Hapus dari GMusic?",
+		"remove_account_desc": "{name} hanya dihapus dari daftar ini. Akun Google-nya sendiri tidak terpengaruh, dan Anda bisa masuk kembali kapan saja.",
+		"saved_accounts_hint": "Pilih akun tersimpan untuk beralih ke akun tersebut."
 	},
 	"player": {
 		"play": "Putar",
@@ -130,7 +135,8 @@
 		"remove_dislike": "Hapus tidak suka",
 		"add_to_playlist": "Tambah ke playlist",
 		"pin_to_top": "Sematkan ke atas",
-		"unpin": "Lepas sematan"
+		"unpin": "Lepas sematan",
+		"block_artist": "Blokir artis"
 	},
 	"home": {
 		"good_morning": "Selamat pagi",
@@ -231,7 +237,9 @@
 			"storage": "Penyimpanan",
 			"updates": "Pembaruan",
 			"report": "Laporkan masalah",
-			"whats_new": "Apa yang baru"
+			"whats_new": "Apa yang baru",
+			"blocked": "Artis yang diblokir",
+			"support": "Dukung"
 		},
 		"general": {
 			"language": "Bahasa antarmuka",
@@ -287,7 +295,12 @@
 			"heading_font_short_hint": "Judul halaman dan bagian.",
 			"load_font_dialog": "Pilih font",
 			"font_filter": "Font",
-			"experimental": "Eksperimental"
+			"experimental": "Eksperimental",
+			"app_icon": "Ikon aplikasi",
+			"app_icon_hint": "File PNG akan menggantikan ikon pada taskbar, baki sistem, dan jendela ini. Pintasan dan manajer file akan tetap menggunakan ikon bawaan.",
+			"app_icon_pick": "Pilih…",
+			"app_icon_dialog": "Pilih ikon aplikasi",
+			"app_icon_filter": "Gambar PNG"
 		},
 		"playback": {
 			"audio_quality": "Kualitas audio",
@@ -307,7 +320,14 @@
 			"hide_videos": "Sembunyikan video di pencarian",
 			"hide_videos_hint": "Hanya tampilkan trek audio dan rilis resmi di hasil pencarian.",
 			"lyrics_provider": "Lirik tersinkronisasi (Boidu/LRCLIB)",
-			"lyrics_provider_hint": "Ambil lirik tersinkronisasi komunitas untuk lagu yang sedang diputar."
+			"lyrics_provider_hint": "Ambil lirik tersinkronisasi komunitas untuk lagu yang sedang diputar.",
+			"blocked_artists": "Artis yang diblokir",
+			"blocked_artists_hint": "Artis yang diblokir akan dikecualikan dari radio, pemutaran otomatis, dan rekomendasi. Daftar putar dan album yang kamu buka tetap memutar seluruh isinya.",
+			"blocked_artists_empty": "Belum ada yang diblokir. Gunakan \"blokir artis\" dari menu ⋯ pada trek.",
+			"blocked_artists_remove": "Buka blokir {name}",
+			"blocked_artists_show_all": "Tunjukkan semua {count}",
+			"blocked_artists_show_less": "Tunjukkan lebih sedikit",
+			"blocked_artists_copy": "Salin JSON"
 		},
 		"data": {
 			"clear_cache": "Bersihkan cache gambar dan stream",
@@ -335,7 +355,12 @@
 			"diagnostics_saved": "Tersimpan",
 			"report_issue": "Buka formulir bug",
 			"report_issue_hint": "Membuka GitHub di browser Anda dengan versi dan info sistem yang sudah terisi otomatis.",
-			"report_issue_button": "Laporkan"
+			"report_issue_button": "Laporkan",
+			"update_check_failed": "Cek update gagal: {error}",
+			"update_packaged": "Versi ini dipasang menggunakan manajer paket, perbarui dengan cara yang sama.",
+			"kofi": "Dukung pengembang",
+			"kofi_hint": "GMusic gratis dan akan selalu gratis. Tersedia Ko-fi jika Anda ingin memberikan dukungan.",
+			"kofi_button": "Buka Ko-fi"
 		}
 	},
 	"dialogs": {
@@ -365,7 +390,7 @@
 		},
 		"shortcuts": {
 			"title": "Pintasan keyboard",
-			"reopen_hint": "{mod}H membuka jendela ini kapan saja.",
+			"reopen_hint": "{key} membuka jendela ini kapan saja.",
 			"group_playback": "Pemutaran",
 			"group_general": "Umum",
 			"play_pause": "Putar atau jeda",
@@ -556,7 +581,11 @@
 		"already_in_all": "Semua {count} lagu sudah ada di {playlist}",
 		"already_in": "Sudah ada di {playlist}",
 		"added_songs": "Menambahkan {count} lagu ke {playlist}",
-		"added_one": "Menambahkan ke {playlist}"
+		"added_one": "Menambahkan ke {playlist}",
+		"app_icon_set": "Ikon aplikasi berhasil diubah",
+		"blocked_copied": "{count} artis terblokir disalin sebagai JSON",
+		"blocked_artist": "{name} berhasil diblokir",
+		"unblocked_artist": "Blokir {name} telah dibuka"
 	},
 	"history": {
 		"title": "Riwayat",

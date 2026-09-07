@@ -77,7 +77,12 @@
 		"choose_channel_desc": "Biblioteca, curtidas e playlists usarão este canal. Você pode trocar novamente depois.",
 		"cancel_sign_in": "Cancelar login",
 		"sign_in_hint": "Entre com sua conta do Google para acessar sua biblioteca e playlists do YouTube Music.",
-		"history": "Histórico"
+		"history": "Histórico",
+		"add_account": "Adicionar conta",
+		"remove_account": "Remover conta",
+		"remove_account_title": "Remover do Limusic?",
+		"remove_account_desc": "{name} é removida apenas desta lista. A conta do Google em si não é afetada, e você pode fazer login com ela novamente quando quiser.",
+		"saved_accounts_hint": "Selecione uma conta salva para alternar."
 	},
 	"player": {
 		"play": "Tocar",
@@ -130,7 +135,8 @@
 		"remove_dislike": "Remover descurtida",
 		"add_to_playlist": "Adicionar à playlist",
 		"pin_to_top": "Fixar no topo",
-		"unpin": "Desafixar"
+		"unpin": "Desafixar",
+		"block_artist": "Bloquear artista"
 	},
 	"home": {
 		"good_morning": "Bom dia",
@@ -153,7 +159,9 @@
 	"artist": {
 		"subscribe": "Inscrever-se",
 		"subscribed": "Inscrito",
-		"top_songs": "Principais músicas"
+		"top_songs": "Principais músicas",
+		"subscribe_to": "Inscrever-se em {name}",
+		"unsubscribe_from": "Cancelar inscrição de {name}"
 	},
 	"library": {
 		"title": "Biblioteca",
@@ -229,7 +237,9 @@
 			"storage": "Armazenamento",
 			"updates": "Atualizações",
 			"report": "Reportar problema",
-			"whats_new": "Novidades"
+			"whats_new": "Novidades",
+			"blocked": "Artistas bloqueados",
+			"support": "Apoiar"
 		},
 		"general": {
 			"language": "Idioma da interface",
@@ -285,7 +295,12 @@
 			"heading_font_short_hint": "Títulos de páginas e seções.",
 			"load_font_dialog": "Carregar fonte",
 			"font_filter": "Fontes",
-			"experimental": "Experimental"
+			"experimental": "Experimental",
+			"app_icon": "Ícone do aplicativo",
+			"app_icon_hint": "Um PNG substitui o ícone na barra de tarefas, na área de notificação e nesta janela. Os atalhos e o gerenciador de arquivos mantêm o ícone instalado.",
+			"app_icon_pick": "Escolher…",
+			"app_icon_dialog": "Escolha um ícone do aplicativo",
+			"app_icon_filter": "Imagem PNG"
 		},
 		"playback": {
 			"audio_quality": "Qualidade de áudio",
@@ -305,7 +320,14 @@
 			"hide_videos": "Ocultar vídeos na busca",
 			"hide_videos_hint": "Mostrar apenas faixas de áudio e lançamentos oficiais nos resultados da busca.",
 			"lyrics_provider": "Letras sincronizadas (Boidu/LRCLIB)",
-			"lyrics_provider_hint": "Buscar letras sincronizadas pela comunidade para a música atual."
+			"lyrics_provider_hint": "Buscar letras sincronizadas pela comunidade para a música atual.",
+			"blocked_artists": "Artistas bloqueados",
+			"blocked_artists_hint": "Artistas bloqueados não aparecem no rádio, na reprodução automática nem nas recomendações. As playlists e os álbuns que você abre continuam reproduzindo todo o conteúdo presente neles.",
+			"blocked_artists_empty": "Ainda não há ninguém bloqueado. Use \"Bloquear artista\" no menu ⋯ de uma faixa.",
+			"blocked_artists_remove": "Desbloquear {name}",
+			"blocked_artists_show_all": "Mostrar todos os {count}",
+			"blocked_artists_show_less": "Mostrar menos",
+			"blocked_artists_copy": "Copiar JSON"
 		},
 		"data": {
 			"clear_cache": "Limpar cache de imagens e streams",
@@ -331,7 +353,12 @@
 			"diagnostics_saved": "Salvo",
 			"report_issue": "Abrir formulário de bug",
 			"report_issue_hint": "Abre o GitHub no navegador, com versão e sistema já preenchidos.",
-			"report_issue_button": "Reportar"
+			"report_issue_button": "Reportar",
+			"update_check_failed": "Falha ao verificar atualização: {error}",
+			"update_packaged": "Esta versão foi instalada por um gerenciador de pacotes. Atualize-a da mesma forma.",
+			"kofi": "Me pague um café",
+			"kofi_hint": "O Limusic é gratuito e continuará assim. O Ko-fi está à disposição caso você queira dar uma força.",
+			"kofi_button": "Abrir Ko-fi"
 		}
 	},
 	"dialogs": {
@@ -361,7 +388,7 @@
 		},
 		"shortcuts": {
 			"title": "Atalhos de teclado",
-			"reopen_hint": "{mod}H abre isso a qualquer momento.",
+			"reopen_hint": "{key} abre isso a qualquer momento.",
 			"group_playback": "Reprodução",
 			"group_general": "Geral",
 			"play_pause": "Tocar ou pausar",
@@ -552,7 +579,11 @@
 		"already_in_all": "Todos os {count} já estão em {playlist}",
 		"already_in": "Já está em {playlist}",
 		"added_songs": "Adicionadas {count} músicas a {playlist}",
-		"added_one": "Adicionado a {playlist}"
+		"added_one": "Adicionado a {playlist}",
+		"app_icon_set": "Ícone do aplicativo alterado",
+		"blocked_copied": "{count} artistas bloqueados copiados como JSON",
+		"blocked_artist": "{name} bloqueado",
+		"unblocked_artist": "{name} desbloqueado"
 	},
 	"history": {
 		"title": "Histórico",

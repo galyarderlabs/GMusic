@@ -1,5 +1,7 @@
 //! Limusic Tauri app. Wires transport + player + db + orchestrator behind the command boundary.
 
+mod appicon;
+mod blocked;
 mod cipher;
 mod commands;
 mod db;
@@ -206,6 +208,9 @@ fn raise_fd_limit() {
     }
 }
 
+/// Tauri entry point. Applies the platform boot fixes (open-fd limit, NVIDIA/WebKit env), restores
+/// the persisted session, wires every command and plugin, and runs the event loop. context/01
+/// §startup.
 pub fn run() {
     // Must happen before any webview exists: the limit is inherited by the web processes WebKit
     // forks, and cannot be raised for them afterwards.
@@ -334,6 +339,11 @@ pub fn run() {
             let session = Session { locale: Locale::default(), visitor_data, data_sync_id, cookie };
             let it = InnerTube::new(session, proxy.as_deref()).expect("build InnerTube");
             it.set_hide_videos(db.get_setting("hide_videos").as_deref() == Some("true"));
+            // Read while `db` is still ours; the window is decorated further down, once the rest of
+            // the setup that could fail is out of the way.
+            #[cfg_attr(target_os = "macos", allow(unused_variables))]
+            let system_titlebar = db.get_setting("system_titlebar").as_deref() == Some("true");
+            it.set_blocked(blocked::block_list(&db));
             let clients = Clients::bundled();
 
             let mut player = Player::new(cache_dir.to_str().unwrap()).expect("init libmpv");
@@ -405,6 +415,14 @@ pub fn run() {
                 tracing::warn!(error = %e, "tray init failed (continuing without tray)");
             }
 
+            // A custom app icon (#173) has to be pushed at each surface every launch, since only
+            // the .exe/.desktop icon is baked in and that one we can't touch. Guarded, rather than
+            // unconditional: with no custom icon there is nothing to restore, and on Windows
+            // `apply` would take over ICON_BIG from the .exe's own icon for no reason.
+            if appicon::custom_path(&handle).is_some() {
+                appicon::apply(&handle);
+            }
+
             // Bridge: apply Listen Together sync commands (guest playback / host seed) to AppState.
             {
                 let st = app_state.clone();
@@ -465,16 +483,18 @@ pub fn run() {
                             let _ = st.it.account_menu(client).await;
                         }
                     }
+                    // Google rolls its short-lived tokens on the requests the app makes, so an
+                    // idle night leaves the jar to expire on its own. Half-hourly is well inside
+                    // the window and costs one request.
+                    let mut keepalive = tokio::time::interval(Duration::from_secs(30 * 60));
+                    keepalive.tick().await; // the first tick is immediate; the ping above covered it
                     loop {
                         tokio::select! {
                             _ = rejected.notified() => {
                                 session::refresh_session(app_handle.clone(), st.clone()).await;
                             }
-                            _ = rotated.notified() => {
-                                if let Some(cookie) = st.it.cookie() {
-                                    st.db.set_setting("session_cookie", &cookie);
-                                }
-                            }
+                            _ = rotated.notified() => st.persist_rotated_cookie(),
+                            _ = keepalive.tick() => st.keep_session_alive().await,
                         }
                     }
                 });
@@ -526,6 +546,17 @@ pub fn run() {
                 });
             }
 
+            // Hand the frame to the compositor when the user asked for it (issue #65). The window
+            // is created undecorated, so this is the one place that reverses it; macOS never gets
+            // here, its traffic lights come from `tauri.macos.conf.json`. Done before the SPA shows
+            // the window, so the frame is already there rather than popping in.
+            #[cfg(not(target_os = "macos"))]
+            if system_titlebar {
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.set_decorations(true);
+                }
+            }
+
             // The window starts hidden and the SPA shows it once it has mounted, so the saved size
             // is already applied by then (#45). Safety net: if the frontend never gets that far,
             // show it anyway rather than leaving the app with no window at all.
@@ -572,11 +603,16 @@ pub fn run() {
             commands::set_setting,
             commands::get_stream_clients,
             commands::clear_caches,
+            commands::set_app_icon,
+            commands::app_icon_path,
             commands::get_account,
             commands::get_account_identities,
             commands::switch_account,
             commands::sign_out,
             commands::login_webview,
+            commands::get_google_accounts,
+            commands::switch_google_account,
+            commands::remove_google_account,
             commands::open_mini,
             commands::close_mini,
             commands::get_home,
@@ -592,6 +628,9 @@ pub fn run() {
             commands::sync_playlist_index,
             commands::play_counts,
             commands::get_album,
+            commands::get_blocked_artists,
+            commands::block_artist,
+            commands::unblock_artist,
             commands::get_local_library,
             commands::add_local_folder,
             commands::remove_local_folder,
@@ -788,6 +827,40 @@ fn spawn_event_pump(
 mod tests {
     use super::{close_hides, PositionThrottle};
     use std::time::{Duration, Instant};
+
+    /// `tauri.macos.conf.json` overrides the main window so macOS gets real traffic lights over the
+    /// app's own titlebar (issue #65). Tauri merges platform config with RFC 7386 JSON Merge Patch,
+    /// which replaces arrays wholesale, so that file has to repeat every window key from
+    /// `tauri.conf.json` rather than patch the few it changes. Nothing on this machine builds for
+    /// macOS, so a key dropped from the copy would only surface as a wrongly sized window shipped
+    /// by CI. This fails instead.
+    #[test]
+    fn macos_window_config_mirrors_the_base_window() {
+        let base: serde_json::Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let mac: serde_json::Value =
+            serde_json::from_str(include_str!("../tauri.macos.conf.json")).unwrap();
+        let base_win = base["app"]["windows"][0].as_object().unwrap();
+        let mac_win = mac["app"]["windows"][0].as_object().unwrap();
+
+        // Only these two may differ; the frame is the compositor's on macOS.
+        let overridden = ["decorations", "transparent"];
+        for (k, v) in base_win {
+            let got = mac_win.get(k).unwrap_or_else(|| panic!("tauri.macos.conf.json drops `{k}`"));
+            if !overridden.contains(&k.as_str()) {
+                assert_eq!(got, v, "tauri.macos.conf.json disagrees on `{k}`");
+            }
+        }
+        assert_eq!(mac_win["decorations"], serde_json::json!(true));
+        assert_eq!(mac_win["titleBarStyle"], serde_json::json!("Overlay"));
+        assert_eq!(mac_win["hiddenTitle"], serde_json::json!(true));
+
+        // Catches a typo or a key Tauri would reject: WindowConfig is `deny_unknown_fields`.
+        serde_json::from_value::<tauri::utils::config::WindowConfig>(
+            mac["app"]["windows"][0].clone(),
+        )
+        .expect("macOS window config is not a valid WindowConfig");
+    }
 
     #[test]
     fn close_hides_unless_explicitly_disabled() {

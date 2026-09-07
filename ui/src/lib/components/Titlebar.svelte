@@ -1,6 +1,8 @@
 <script lang="ts">
-	// Custom titlebar (the window runs undecorated — tauri.conf `decorations: false`). Everything
-	// on the bar is a drag region except the buttons; double-click maximizes (handled by Tauri's
+	// Custom titlebar. The window runs undecorated by default (tauri.conf `decorations: false`);
+	// with a system frame (`win.chrome`, issue #65) this bar stays as a toolbar and only drops its
+	// own window buttons, since everything else on it is app navigation, not window management.
+	// Everything on the bar is a drag region except the buttons; double-click maximizes (Tauri's
 	// drag region itself). Right cluster: Last.fm scrobbler | separator | minimize / maximize /
 	// close — per the design, the scrobbler lives with the window controls but visually apart.
 	// Account (sign in/out) sits first in that cluster, in its own component.
@@ -25,14 +27,16 @@
 	import LastFmIcon from './LastFmIcon.svelte';
 	import DiscordIcon from './DiscordIcon.svelte';
 	import AccountMenu from './AccountMenu.svelte';
-	import logo from '$lib/assets/logo.png';
+	import { appIcon } from '$lib/appicon.svelte';
 	import * as api from '$lib/api';
 	import { openMiniPlayer, playback, toast, ui } from '$lib/player.svelte';
+	import { win } from '$lib/win.svelte';
 	import { lt } from '$lib/lt.svelte';
 	import { anchorMenu, fitMenu, NO_ANCHOR } from '$lib/menu';
 	import { t } from '$lib/i18n.svelte';
 
-	const win = getCurrentWindow();
+	// `w` is this window; `win` (imported) is the shared frame state.
+	const w = getCurrentWindow();
 
 	// Back/forward. `depth` is how many history entries deep the session is, `deepest` how far it
 	// has ever been, so both buttons grey out instead of doing nothing. popstate carries a signed
@@ -140,9 +144,17 @@
 	data-tauri-drag-region
 	class="relative {ui.theaterOpen ? 'z-0' : 'z-50'} flex h-9 shrink-0 select-none items-center justify-between border-b border-border/60 bg-background glass-surface glass-border"
 >
-	<div class="flex h-full items-center">
+	<span
+		class="pointer-events-none absolute inset-x-0 text-center text-xs font-medium tracking-wide text-muted-foreground"
+	>
+		GMusic
+	</span>
+
+	<!-- macOS overlay style floats the traffic lights over the top-left of the webview, so the row
+	     starts clear of them. 70px is the standard reservation for the three buttons. -->
+	<div class="flex h-full items-center {win.chrome === 'overlay' ? 'pl-[70px]' : ''}">
 		<!-- pointer-events-none: the logo is decoration; clicks on it should drag the window. -->
-		<img src={logo} alt="" class="pointer-events-none ml-3 mr-1.5 h-4 w-4 rounded-sm object-contain" />
+		<img src={appIcon.src} alt="" class="pointer-events-none ml-3 mr-1.5 h-4 w-4 rounded-sm object-contain" />
 		<!-- Bigger and heavier than the icons on the right: these are navigation, and at their
 		     weight the arrow read as decoration and got missed. -->
 		<button
@@ -276,6 +288,34 @@
 		>
 			<HugeiconsIcon icon={MinimizeScreenIcon} class="h-4 w-4" />
 		</button>
+		{#if win.chrome === 'off'}
+			<div class="mx-1.5 h-4 w-px bg-border"></div>
+
+			<button
+				class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+				onclick={() => w.minimize()}
+				aria-label={t('common.minimize')}
+			>
+				<HugeiconsIcon icon={MinusSignIcon} class="h-4 w-4" />
+			</button>
+			<button
+				class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+				onclick={() => w.toggleMaximize()}
+				aria-label={t('common.maximize')}
+			>
+				<HugeiconsIcon icon={SquareIcon} class="h-3.5 w-3.5" />
+			</button>
+			<button
+				class="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:text-destructive"
+				onclick={() => w.close()}
+				aria-label={t('common.close')}
+			>
+				<HugeiconsIcon icon={Cancel01Icon} class="h-4 w-4" />
+			</button>
+		{:else}
+			<!-- The system frame owns closing; leave a little air before its own buttons. -->
+			<div class="w-2"></div>
+		{/if}
 	</div>
 </header>
 

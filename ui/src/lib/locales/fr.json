@@ -77,7 +77,12 @@
 		"choose_channel_desc": "Bibliothèque, J'aime et Playlist vont utiliser cette chaîne. Vous pourrez changer plus tard.",
 		"cancel_sign_in": "Annuler la connexion",
 		"sign_in_hint": "Se connecter avec votre compte Google pour récupérer votre Bibliothèque et vos Playlists de YouTube Music.",
-		"history": "Historique"
+		"history": "Historique",
+		"add_account": "Ajouter un compte",
+		"remove_account": "Supprimer un compte",
+		"remove_account_title": "Supprimer de Limusic ?",
+		"remove_account_desc": "{name} est simplement supprimé de cette liste. Le compte Google lui-même n'est pas affecté, et vous pouvez vous reconnecter avec ce compte quand vous le souhaitez.",
+		"saved_accounts_hint": "Sélectionnez un compte enregistré pour y basculer."
 	},
 	"player": {
 		"play": "Lancer",
@@ -130,7 +135,8 @@
 		"remove_dislike": "Supprimer le J'aime pas",
 		"add_to_playlist": "Ajouter à la playlist",
 		"pin_to_top": "Épingler en haut",
-		"unpin": "Désépingler"
+		"unpin": "Désépingler",
+		"block_artist": "Bloquer l'artiste"
 	},
 	"home": {
 		"good_morning": "Bonne matinée",
@@ -153,7 +159,9 @@
 	"artist": {
 		"subscribe": "S'abonner",
 		"subscribed": "Abonné",
-		"top_songs": "Top musiques"
+		"top_songs": "Top musiques",
+		"subscribe_to": "S'abonner à {name}",
+		"unsubscribe_from": "Se désabonner de {name}"
 	},
 	"library": {
 		"title": "Bibliothèque",
@@ -229,7 +237,9 @@
 			"storage": "Stockage",
 			"updates": "Mises à jour",
 			"report": "Signaler un problème",
-			"whats_new": "Quoi de neuf"
+			"whats_new": "Quoi de neuf",
+			"blocked": "Artistes bloqués",
+			"support": "Assistance"
 		},
 		"general": {
 			"language": "Langue d'interface",
@@ -285,7 +295,12 @@
 			"heading_font_short_hint": "Titres des pages et des sections.",
 			"load_font_dialog": "Charger une police",
 			"font_filter": "Polices",
-			"experimental": "Expérimental"
+			"experimental": "Expérimental",
+			"app_icon": "Icône de l'application",
+			"app_icon_hint": "Un fichier PNG remplace l'icône dans la barre des tâches, dans la zone de notification et dans cette fenêtre. Les raccourcis et le gestionnaire de fichiers conservent l'icône installée.",
+			"app_icon_pick": "Choisir…",
+			"app_icon_dialog": "Choisissez une icône d'application",
+			"app_icon_filter": "Image au format PNG"
 		},
 		"playback": {
 			"audio_quality": "Qualité audio",
@@ -305,7 +320,14 @@
 			"hide_videos": "Masquer les vidéos dans les résultats de recherche",
 			"hide_videos_hint": "Afficher uniquement les morceaux audio et les sorties officielles dans les résultats de recherche.",
 			"lyrics_provider": "Paroles synchronisées (Boidu/LRCLIB)",
-			"lyrics_provider_hint": "Récupérer les paroles synchronisées par la communauté pour les morceaux en cours de lecture."
+			"lyrics_provider_hint": "Récupérer les paroles synchronisées par la communauté pour les morceaux en cours de lecture.",
+			"blocked_artists": "Artistes bloqués",
+			"blocked_artists_hint": "Les artistes bloqués ne sont pas diffusés à la radio, en lecture automatique ni dans les suggestions. Les playlists et les albums que vous ouvrez continuent quant à eux de lire tous les titres qu'ils contiennent.",
+			"blocked_artists_empty": "Personne n'a encore été bloqué. Utilisez l'option « Bloquer l'artiste » dans le menu ⋯ d'un morceau.",
+			"blocked_artists_remove": "Débloquer {name}",
+			"blocked_artists_show_all": "Afficher tout {count}",
+			"blocked_artists_show_less": "Afficher moins",
+			"blocked_artists_copy": "Copier le JSON"
 		},
 		"data": {
 			"clear_cache": "Vider le cache des images et des flux",
@@ -331,7 +353,12 @@
 			"diagnostics_saved": "Enregistré",
 			"report_issue": "Ouvrir le formulaire de rapport de bug",
 			"report_issue_hint": "Ouvre GitHub dans votre navigateur, avec la version et les informations système préremplies.",
-			"report_issue_button": "Signaler"
+			"report_issue_button": "Signaler",
+			"update_check_failed": "Échec de la vérification des mises à jour : {error}",
+			"update_packaged": "Cette version a été installée à l'aide d'un gestionnaire de paquets, mettez-la à jour de la même manière.",
+			"kofi": "Offre-moi un café",
+			"kofi_hint": "Limusic est gratuit et le restera. Ko-fi est là si vous souhaitez apporter votre contribution.",
+			"kofi_button": "Ouvrir Ko-fi"
 		}
 	},
 	"dialogs": {
@@ -361,7 +388,7 @@
 		},
 		"shortcuts": {
 			"title": "Raccourcis clavier",
-			"reopen_hint": "{mod}H permet de rouvrir cette fenêtre à tout moment.",
+			"reopen_hint": "{key} permet de rouvrir cette fenêtre à tout moment.",
 			"group_playback": "Lecture",
 			"group_general": "Général",
 			"play_pause": "Lecture ou pause",
@@ -552,7 +579,11 @@
 		"already_in_all": "Les {count} éléments sont déjà dans {playlist}",
 		"already_in": "Déjà dans {playlist}",
 		"added_songs": "{count} morceaux ajoutés à {playlist}",
-		"added_one": "Ajouté à {playlist}"
+		"added_one": "Ajouté à {playlist}",
+		"app_icon_set": "L'icône de l'application a changé",
+		"blocked_copied": "{count} artistes bloqués ont été copiés au format JSON",
+		"blocked_artist": "{name} bloqué(e)",
+		"unblocked_artist": "{name} débloqué(e)"
 	},
 	"history": {
 		"title": "Historique",

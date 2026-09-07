@@ -65,10 +65,13 @@ jobs:
             if ! git merge --no-edit upstream/master; then
               echo "Standard merge had conflicts, retrying with recursive -X ours strategy..."
               git merge --abort || true
-              git merge -X ours --no-edit upstream/master || {
-                echo "Error: Unresolvable merge conflict encountered."
-                exit 1
-              }
+              if ! git merge -X ours --no-edit upstream/master; then
+                echo "Resolving residual modify/delete or index conflicts in favor of HEAD..."
+                git status --porcelain | grep -E '^DU|^UD' | awk '{print $2}' | xargs -r git rm -f
+                git status --porcelain | grep -E '^UU|^AA' | awk '{print $2}' | xargs -r git checkout --ours --
+                git add -u
+                git commit --no-edit || true
+              fi
             fi
             
             UPSTREAM_SHA=$(git rev-parse upstream/master)

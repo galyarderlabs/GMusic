@@ -9,22 +9,26 @@
 		PinIcon,
 		PinOffIcon,
 		Radio02Icon,
+		PlayIcon,
+		ShuffleIcon,
 		ArrowUpNarrowWideIcon,
 		ArrowDownWideNarrowIcon,
 		BookmarkCheck02Icon,
 		BookmarkMinus02Icon,
 		BookPlusIcon,
 		DashboardSquare02Icon,
-		Share08Icon
+		Share08Icon,
+		UserBlock01Icon
 	} from '@hugeicons/core-free-icons';
 	import * as api from '$lib/api';
 	import type { BrowseItem } from '$lib/api';
-	import { enqueueItem } from '$lib/browse';
+	import { enqueueItem, playItem } from '$lib/browse';
 	import { anchorMenu, ctxHost, fitMenu, NO_ANCHOR, toBody } from '$lib/menu';
 	import { t } from '$lib/i18n.svelte';
 	import {
 		addPick,
 		addToLibrary,
+		blockArtist,
 		auth,
 		inLibrary,
 		isSaved,
@@ -91,6 +95,14 @@
 		} finally {
 			queueing = false;
 		}
+	}
+
+	// Closes first, fetches after: the tracks take a moment to arrive and playback starting is its
+	// own feedback, so leaving the menu up until then just looks stuck.
+	function play(e: MouseEvent, shuffle: boolean) {
+		e.stopPropagation();
+		menuOpen = false;
+		playItem(item, shuffle);
 	}
 
 	let saving = $state(false);
@@ -191,6 +203,27 @@
 		{@attach toBody}
 		{@attach fitMenu(anchor)}
 	>
+		<!-- One row, two targets: the row plays, the small button on its right shuffles. Two
+		     siblings in a flex wrapper rather than a nested button (invalid HTML), with the hover
+		     tint on the wrapper so it still reads as a single item. -->
+		{#if item.kind === 'album' || item.kind === 'playlist'}
+			<div class="flex items-center rounded-md hover:bg-accent/10">
+				<button
+					class="flex flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-primary"
+					onclick={(e) => play(e, false)}
+				>
+					<HugeiconsIcon icon={PlayIcon} class="h-4 w-4" /> {t('player.play')}
+				</button>
+				<button
+					class="mr-1 flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-accent/20"
+					title={t('player.shuffle_play')}
+					aria-label={t('player.shuffle_play')}
+					onclick={(e) => play(e, true)}
+				>
+					<HugeiconsIcon icon={ShuffleIcon} class="h-4 w-4" />
+				</button>
+			</div>
+		{/if}
 		{#if showPin}
 			<button
 				class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10"
@@ -288,6 +321,16 @@
 					})}
 			>
 				<HugeiconsIcon icon={BookmarkMinus02Icon} class="h-4 w-4" /> {t('library.remove_from_library')}
+			</button>
+		{/if}
+		<!-- Artist cards only. An album or playlist card's artist line is a composed subtitle, and
+		     there is no reliable identity in it to block by (plan 046). -->
+		{#if onYouTube && item.kind === 'artist'}
+			<button
+				class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10"
+				onclick={(e) => run(e, () => blockArtist(item.id, item.title))}
+			>
+				<HugeiconsIcon icon={UserBlock01Icon} class="h-4 w-4" /> {t('player.block_artist')}
 			</button>
 		{/if}
 	</div>

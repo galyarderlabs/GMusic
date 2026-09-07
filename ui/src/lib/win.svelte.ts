@@ -1,10 +1,15 @@
-// Shared window-maximized state: the resize borders hide when maximized, and the root container
-// drops its rounded corners. One listener, initialized once by the root layout.
+// Shared window-frame state: the resize borders hide when maximized, and the root container drops
+// its rounded corners. `chrome` says whether the compositor is drawing the frame instead of us.
+// One listener, initialized once by the root layout.
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { onUiVisible } from '$lib/api';
+import { getSettings, onUiVisible } from '$lib/api';
 import { setUiVisible } from '$lib/theme.svelte';
 
-export const win = $state({ maximized: false });
+/** Who draws the window frame. `off` = our custom titlebar owns it (the default), `on` = the
+ *  compositor does (the "system title bar" setting, Linux/Windows), `overlay` = macOS traffic
+ *  lights float over our bar. Anything but `off` hides our window buttons and corner rounding.
+ *  Derived in Rust (`native_chrome` in commands.rs) so the SPA needs no platform check. */
+export const win = $state({ maximized: false, chrome: 'off' as 'off' | 'on' | 'overlay' });
 
 let started = false;
 
@@ -20,7 +25,15 @@ export function initWin(): () => void {
 	// Never swallow this one. `show` is ACL-gated, and a silent catch here hid a missing
 	// `core:window:allow-show` for a week: the reveal fell through to lib.rs's safety net, so every
 	// launch sat on an empty desktop while the tray and the media keys already worked (#122).
-	w.show().catch((e) => console.error('window show failed', e));
+	// Settled before the reveal, so the window never flashes rounded corners and a second set of
+	// window buttons on its way to the system frame. `finally`: the show must happen even if the
+	// settings call fails, or a backend hiccup leaves the app with no window at all (#122).
+	getSettings()
+		.then((s) => {
+			if (s.native_chrome === 'on' || s.native_chrome === 'overlay') win.chrome = s.native_chrome;
+		})
+		.catch(() => {})
+		.finally(() => w.show().catch((e) => console.error('window show failed', e)));
 	const sync = () =>
 		w
 			.isMaximized()
