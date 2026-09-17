@@ -42,7 +42,7 @@
 		dragVolume,
 		playback,
 		toggleMute,
-		toggleNowPlayingLike,
+		toggleNowPlayingRating,
 		ui,
 		wheelVolume
 	} from '$lib/player.svelte';
@@ -263,7 +263,7 @@
 	let justLiked = $state(false);
 	function toggleLike() {
 		if (playback.rating !== 'like') justLiked = true;
-		toggleNowPlayingLike();
+		toggleNowPlayingRating();
 	}
 </script>
 

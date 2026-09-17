@@ -83,10 +83,15 @@ pub struct LastfmHandle {
 }
 
 impl LastfmHandle {
-    pub fn set_track(&self, item: &SongItem) {
+    /// `primary_only` is the `lastfm_primary_artist` setting (issue #231): scrobble the first
+    /// credit instead of YouTube's whole byline. `strict` is its sub-setting
+    /// (`lastfm_primary_strict`), which cuts at "&" as well.
+    pub fn set_track(&self, item: &SongItem, primary_only: bool, strict: bool) {
+        let artists =
+            if primary_only { primary_artist(&item.artists, strict) } else { item.artists.clone() };
         let _ = self.tx.send(Msg::Track(Box::new(Track {
             title: item.title.clone(),
-            artists: item.artists.clone(),
+            artists,
             album: item.album.clone(),
         })));
     }
@@ -199,6 +204,32 @@ impl Scrobbler {
             Ok(_) => tracing::info!(track = %t.title, "scrobbled to last.fm"),
             Err(e) => tracing::warn!(error = %e.message, "last.fm scrobble failed"),
         }
+    }
+}
+
+/// The first credit of a multi-artist byline ("Artist A, Artist B" -> "Artist A"), for the
+/// `lastfm_primary_artist` setting (issue #231). Last.fm has no notion of a joined credit, so the
+/// full byline creates one artist literally named "Artist A, Artist B": dead page, split stats,
+/// and no match against the real album.
+///
+/// Cuts at "," always. "&" only when `strict`, the sub-setting: a joint act ("Future & Metro
+/// Boomin") is usually a real Last.fm artist with its own page, so cutting it misattributes every
+/// one of its tracks, and the same goes for a duo whose name simply contains "&" (Simon &
+/// Garfunkel). Users who want every play on one artist opt into that trade. "feat." needs no
+/// handling either way, YouTube Music puts features in the track title, which is also where
+/// Last.fm wants them.
+///
+/// This runs on the string, not on `artist_runs`, because the runs are gone exactly where this is
+/// needed most: `backfill_metadata` clears them whenever it repairs the byline from
+/// `videoDetails.author`, and a Listen Together guest's queue never had them.
+// ponytail: separator scan. A real credit parser only if users report bylines it gets wrong.
+fn primary_artist(artists: &str, strict: bool) -> String {
+    let end = artists.find(|c: char| c == ',' || (strict && c == '&')).unwrap_or(artists.len());
+    let first = artists[..end].trim();
+    if first.is_empty() {
+        artists.to_owned()
+    } else {
+        first.to_owned()
     }
 }
 
@@ -477,6 +508,23 @@ mod tests {
             strip_appdir(&format!("{dir}/usr/share:/usr/share:/usr/local/share"), dir),
             Some("/usr/share:/usr/local/share".to_string())
         );
+    }
+
+    #[test]
+    fn primary_artist_cuts_at_commas_and_only_at_ampersands_when_strict() {
+        assert_eq!(primary_artist("Artist A, Artist B", false), "Artist A");
+        assert_eq!(primary_artist("Kendrick Lamar,SZA", false), "Kendrick Lamar");
+        // A joint act stays whole until the user opts into the strict cut.
+        assert_eq!(primary_artist("Future & Metro Boomin", false), "Future & Metro Boomin");
+        assert_eq!(primary_artist("Future & Metro Boomin", true), "Future");
+        assert_eq!(primary_artist("Simon&Garfunkel", true), "Simon");
+        // Whichever separator comes first wins.
+        assert_eq!(primary_artist("A & B, C", true), "A");
+        assert_eq!(primary_artist("A, B & C", true), "A");
+        // A lone artist, and a byline that starts with the separator, come back untouched.
+        assert_eq!(primary_artist("Delara", true), "Delara");
+        assert_eq!(primary_artist(", Artist B", true), ", Artist B");
+        assert_eq!(primary_artist("& Juliet", true), "& Juliet");
     }
 
     #[test]

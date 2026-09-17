@@ -178,8 +178,8 @@
 			</button>
 		{/if}
 		<!-- In the player bar (`linksOnly`) like has its own button, which drops below lg to leave the
-		     title room, so the menu carries it at that width instead. Dislike has no button of its own
-		     anywhere, so it stays visible at every width. -->
+		     title room, so the menu carries it at that width instead. Dislike has a button of its own only in the
+		     mini player, so here it stays visible at every width. -->
 		{#if !isLocal}
 			<button
 				class="w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10 {linksOnly

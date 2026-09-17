@@ -19,6 +19,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Slider } from '$lib/components/ui/slider';
+	import { LEVELS as ZOOM_LEVELS, setZoom, zoom } from '$lib/zoom.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Select from '$lib/components/ui/select';
@@ -83,6 +84,8 @@
 	const currentTheme = $derived(THEMES.find((t) => t.id === theme.id) ?? THEMES[0]);
 
 	// --- Themes tab ---
+	const pct = (level: number) => `${Math.round(level * 100)}%`;
+
 	type FontKey = 'fontSans' | 'fontHeading';
 	const FONT_ROWS: { key: FontKey; label: string; hint: string }[] = $derived([
 		{
@@ -297,6 +300,12 @@
 	// for. Same test in `player.svelte.ts`, which hydrates `prefs` at launch.
 	const musicVideosOn = $derived(settings.music_videos === 'true');
 	const boiduOn = $derived(settings.lyrics_boidu !== 'false');
+	// Off by default: the full byline is what YouTube credits, and cutting it is a preference
+	// with a real failure mode (a comma-joined duo name), not a fix (issue #231).
+	const lastfmPrimaryOn = $derived(settings.lastfm_primary_artist === 'true');
+	// Sub-setting of the one above: also cut at "&", which costs the joint acts that have their
+	// own Last.fm page. Only reachable while the parent is on.
+	const lastfmStrictOn = $derived(settings.lastfm_primary_strict === 'true');
 	const preventDuplicatesOn = $derived(settings.prevent_duplicates === 'true');
 	// Off by default: shuffle applies to the queue it was turned on for (issue #117).
 	const stickyShuffleOn = $derived(settings.sticky_shuffle === 'true');
@@ -351,6 +360,16 @@
 	async function setHideVideos(on: boolean) {
 		settings.hide_videos = on ? 'true' : 'false';
 		await api.setSetting('hide_videos', settings.hide_videos);
+	}
+
+	async function setLastfmPrimary(on: boolean) {
+		settings.lastfm_primary_artist = on ? 'true' : 'false';
+		await api.setSetting('lastfm_primary_artist', settings.lastfm_primary_artist);
+	}
+
+	async function setLastfmStrict(on: boolean) {
+		settings.lastfm_primary_strict = on ? 'true' : 'false';
+		await api.setSetting('lastfm_primary_strict', settings.lastfm_primary_strict);
 	}
 
 	async function setBoidu(on: boolean) {
@@ -609,6 +628,11 @@
 									control: radiusSlider
 								})}
 								{@render row({
+									title: t('settings.themes.zoom'),
+									desc: t('settings.themes.zoom_hint'),
+									control: zoomSelect
+								})}
+								{@render row({
 									title: t('settings.themes.app_icon'),
 									desc: t('settings.themes.app_icon_hint'),
 									control: appIconButtons
@@ -728,6 +752,25 @@
 									desc: t('settings.playback.blocked_artists_hint'),
 									below: blockedList
 								})}
+							</div>
+						</section>
+						<section class={GROUP}>
+							<h3 class={LABEL}>{t('settings.sections.scrobbling')}</h3>
+							<div class={CARD}>
+								{@render row({
+									title: t('settings.playback.lastfm_primary_artist'),
+									desc: t('settings.playback.lastfm_primary_artist_hint'),
+									control: lastfmPrimarySwitch,
+									tall: true
+								})}
+								{#if lastfmPrimaryOn}
+									{@render row({
+										title: t('settings.playback.lastfm_primary_strict'),
+										desc: t('settings.playback.lastfm_primary_strict_hint'),
+										control: lastfmStrictSwitch,
+										tall: true
+									})}
+								{/if}
 							</div>
 						</section>
 						<section class={GROUP}>
@@ -900,6 +943,14 @@
 	/>{/snippet}
 {#snippet musicVideoSwitch()}<Switch checked={musicVideosOn} onCheckedChange={setMusicVideos} />{/snippet}
 {#snippet hideVideoSwitch()}<Switch checked={hideVideosOn} onCheckedChange={setHideVideos} />{/snippet}
+{#snippet lastfmPrimarySwitch()}<Switch
+		checked={lastfmPrimaryOn}
+		onCheckedChange={setLastfmPrimary}
+	/>{/snippet}
+{#snippet lastfmStrictSwitch()}<Switch
+		checked={lastfmStrictOn}
+		onCheckedChange={setLastfmStrict}
+	/>{/snippet}
 {#snippet boiduSwitch()}<Switch checked={boiduOn} onCheckedChange={setBoidu} />{/snippet}
 {#snippet bannerSwitch()}<Switch checked={updateBannerOn} onCheckedChange={setUpdateBanner} />{/snippet}
 {#snippet openPlayerSwitch()}<Switch
@@ -986,6 +1037,19 @@
 			{effective.radius.toFixed(2)}
 		</span>
 	</div>
+{/snippet}
+
+{#snippet zoomSelect()}
+	<Select.Root type="single" value={String(zoom.level)} onValueChange={(v) => setZoom(Number(v))}>
+		<Select.Trigger class="w-44 shrink-0" aria-label={t('a11y.zoom')}>
+			<span class="flex-1 text-left">{pct(zoom.level)}</span>
+		</Select.Trigger>
+		<Select.Content>
+			{#each ZOOM_LEVELS as lv (lv)}
+				<Select.Item value={String(lv)} label={pct(lv)}>{pct(lv)}</Select.Item>
+			{/each}
+		</Select.Content>
+	</Select.Root>
 {/snippet}
 
 {#snippet fontSelect(key: FontKey, label: string)}

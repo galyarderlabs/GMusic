@@ -33,7 +33,7 @@
 		openAddToPlaylist,
 		openMiniPlayer,
 		toggleMute,
-		toggleNowPlayingLike,
+		toggleNowPlayingRating,
 		wheelVolume
 	} from '$lib/player.svelte';
 	import { thumb } from '$lib/thumb';
@@ -60,7 +60,7 @@
 
 	function toggleLike() {
 		if (playback.rating !== 'like') justLiked = true;
-		toggleNowPlayingLike();
+		toggleNowPlayingRating();
 	}
 
 	const fmt = (secs: number) => {

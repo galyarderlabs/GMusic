@@ -37,8 +37,12 @@
 	 * the page comes back carrying the *subscribe button's* channel (an artist's official channel,
 	 * which is often a different `UC…`). Keying the count off `channelId` therefore read 0 for
 	 * everyone except the artists whose page failed to parse and fell back to the browse id.
+	 *
+	 * `browseId` is that same recorded id, kept so opening a row browses what we browsed. The
+	 * official channel answers with an artist page too, but it is a different page: no "From your
+	 * library" shelf, because the library is keyed to the music channel. Issue #193.
 	 */
-	type Familiar = ArtistPage & { plays: number };
+	type Familiar = ArtistPage & { plays: number; browseId: string };
 
 	let artists = $state<Familiar[]>([]);
 	let loading = $state(true);
@@ -89,7 +93,9 @@
 			await Promise.all(
 				ids.map(async (id) => {
 					const page = await fetchArtist(id);
-					return page?.name ? { ...page, plays: personal.artists[id]?.count ?? 0 } : null;
+					return page?.name
+						? { ...page, browseId: id, plays: personal.artists[id]?.count ?? 0 }
+						: null;
 				})
 			)
 		)
@@ -102,25 +108,25 @@
 		loading = false;
 	});
 
-	const asItem = (a: ArtistPage): BrowseItem => ({
+	const asItem = (a: Familiar): BrowseItem => ({
 		kind: 'artist',
-		id: a.channelId,
+		id: a.browseId,
 		title: a.name ?? t('common.artist_singular'),
 		subtitle: a.subscribers,
 		thumbnail: a.thumbnail
 	});
 
-	const open = (a: ArtistPage) => goto(`/artist/${encodeURIComponent(a.channelId)}`);
+	const open = (a: Familiar) => goto(`/artist/${encodeURIComponent(a.browseId)}`);
 	const rank = (i: number) => String(i + 1).padStart(2, '0');
 
-	async function toggleSub(a: ArtistPage) {
+	async function toggleSub(a: Familiar) {
 		if (subBusy) return;
 		const next = !subs[a.channelId];
 		subBusy = a.channelId;
 		subs = { ...subs, [a.channelId]: next };
 		try {
 			await api.subscribe(a.channelId, next);
-			putCached(`artist:${a.channelId}`, { ...a, subscribed: next }); // keep the cache truthful
+			putCached(`artist:${a.browseId}`, { ...a, subscribed: next }); // keep the cache truthful
 			toast.success(next ? t('artist.subscribed') : t('artist.subscribe'));
 		} catch (e) {
 			subs = { ...subs, [a.channelId]: !next };
@@ -131,7 +137,7 @@
 	}
 </script>
 
-{#snippet subButton(a: ArtistPage, onDark: boolean)}
+{#snippet subButton(a: Familiar, onDark: boolean)}
 	<button
 		class="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors {onDark
 			? 'bg-black/40 backdrop-blur-sm hover:bg-black/60'

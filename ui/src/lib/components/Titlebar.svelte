@@ -13,6 +13,7 @@
 	import {
 		ArrowLeft01Icon,
 		ArrowRight01Icon,
+		Refresh03Icon,
 		MinusSignIcon,
 		SquareIcon,
 		Cancel01Icon,
@@ -29,7 +30,7 @@
 	import AccountMenu from './AccountMenu.svelte';
 	import { appIcon } from '$lib/appicon.svelte';
 	import * as api from '$lib/api';
-	import { openMiniPlayer, playback, prefs, toast, ui } from '$lib/player.svelte';
+	import { openMiniPlayer, playback, prefs, refreshView, toast, ui } from '$lib/player.svelte';
 	import { win } from '$lib/win.svelte';
 	import { lt } from '$lib/lt.svelte';
 	import { anchorMenu, fitMenu, NO_ANCHOR } from '$lib/menu';
@@ -173,6 +174,18 @@
 			aria-label={t('common.forward')}
 		>
 			<HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.5} class="h-4 w-4" />
+		</button>
+		<!-- Third in the browser's own control group, and read as such without a label. It drops the
+		     browse cache and remounts the page, which is the only way to ask YouTube for a different
+		     home feed: refetching rotates roughly a third of "Quick picks" (#177). Never disabled,
+		     since the page it reloads is always there; the route's own skeletons are the progress. -->
+		<button
+			class="flex h-full w-9 items-center justify-center text-foreground/80 transition-colors hover:bg-accent/10 hover:text-foreground"
+			onclick={refreshView}
+			title={t('common.refresh')}
+			aria-label={t('common.refresh')}
+		>
+			<HugeiconsIcon icon={Refresh03Icon} strokeWidth={2.5} class="h-4 w-4" />
 		</button>
 	</div>
 

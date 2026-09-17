@@ -46,7 +46,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { auth, initApp, np, playback, ui } from '$lib/player.svelte';
 	import { win, initWin } from '$lib/win.svelte';
-	import { initZoom } from '$lib/zoom';
+	import { initZoom } from '$lib/zoom.svelte';
 	import { initShortcuts } from '$lib/shortcuts';
 	import { initErrorLog } from '$lib/errlog';
 	import {
@@ -176,8 +176,9 @@
 			<!-- dragScroll: dragging a card up to home's Shortcuts grid has to be possible from anywhere in
 			     the feed, so aiming at the top edge scrolls this container while the drag is in flight. -->
 			<main class="min-w-0 flex-1 overflow-y-auto" {@attach dragScroll}>
-				<!-- Remount the current page on sign-in/out so it refetches with the new account. -->
-				{#key auth.epoch}
+				<!-- Remount the current page on sign-in/out so it refetches with the new account, and on
+				     a refresh (titlebar button / F5), which drops the browse cache first. -->
+				{#key `${auth.epoch}:${ui.epoch}`}
 					{@render children()}
 				{/key}
 			</main>

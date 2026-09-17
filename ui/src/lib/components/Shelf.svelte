@@ -21,6 +21,7 @@
 		ArrowRight01Icon,
 		CdIcon,
 		MusicNote01Icon,
+		PlayIcon,
 		PlayListIcon,
 		UserMultiple02Icon
 	} from '@hugeicons/core-free-icons';
@@ -106,6 +107,12 @@
 		openPlayer();
 		return api.playPlaylist(songs, start, undefined, title);
 	};
+	// The header's Play button queues the whole shelf regardless of `queueAll` (#236): on home a row
+	// click is "play this one", and this is the explicit way to ask for all of them.
+	const playAll = () => {
+		openPlayer();
+		return api.playPlaylist(songs, 0, undefined, title);
+	};
 
 	// Slot width per form, and the height the rail reserves before it has been laid out.
 	const SLOT: Record<Mode, string> = {
@@ -160,7 +167,17 @@
 	style="contain-intrinsic-size: auto {HEIGHT[mode]};"
 >
 	{#if title || onMore}
-		<SectionHeading title={title ?? ''} icon={ICONS[mode]} {onMore} {headingClass} />
+		<SectionHeading title={title ?? ''} icon={ICONS[mode]} {onMore} {headingClass}>
+			{#if songs.length}
+				<button
+					onclick={playAll}
+					class="flex shrink-0 cursor-pointer items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+				>
+					<HugeiconsIcon icon={PlayIcon} class="h-3.5 w-3.5" />
+					{t('common.play_all')}
+				</button>
+			{/if}
+		</SectionHeading>
 	{/if}
 	<!-- Measure on pointer enter, because a shelf skipped by content-visibility has no layout at
 	     mount: scrollWidth reads 0 and the arrows never appear. They only show on hover, so measuring

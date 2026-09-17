@@ -323,7 +323,26 @@ pub fn run() {
             // Session bootstrap (context/15 startup ordering): load the persisted login session
             // (cookie/dataSyncId/visitorData) from settings; fetch visitorData anonymously
             // (context/04 §A) only if we've never stored one.
-            let proxy = db.get_setting("proxy");
+            // `LIMUSIC_PROXY` overrides the stored setting, so a region-locked surface can be
+            // tested for one run without a system-wide VPN (CLAUDE.md).
+            let proxy = std::env::var("LIMUSIC_PROXY")
+                .ok()
+                .filter(|p| !p.trim().is_empty())
+                .or_else(|| db.get_setting("proxy").filter(|p| !p.trim().is_empty()))
+                // The setting is free text from the UI. An unparseable one used to fail
+                // `InnerTube::new` below, and that `expect` bricks the app: no window, so no way
+                // to reach settings and undo it. Drop it once here, for every consumer.
+                .filter(|p| match reqwest::Proxy::all(p.as_str()) {
+                    Ok(_) => true,
+                    // Scheme only: the URI can carry credentials in its userinfo (see http.rs).
+                    Err(e) => {
+                        let scheme = p.split_once("://").map_or("(none)", |(s, _)| s);
+                        tracing::warn!(scheme, "unusable proxy setting, going direct: {e}");
+                        false
+                    }
+                });
+            // Before the first fetch: the shared client builds itself on first use.
+            http::set_proxy(proxy.as_deref());
             let cookie = db.get_setting("session_cookie").filter(|s| !s.is_empty());
             let data_sync_id = state::persisted_data_sync_id(&db);
             let visitor_data = db.get_setting("visitor_data").filter(|s| !s.is_empty());
@@ -347,6 +366,10 @@ pub fn run() {
             let clients = Clients::bundled();
 
             let mut player = Player::new(cache_dir.to_str().unwrap()).expect("init libmpv");
+            // The audio bytes are the one request that never went through the proxy setting (#241).
+            if let Err(e) = player.set_http_proxy(proxy.as_deref()) {
+                tracing::warn!("mpv refused the proxy setting: {e}");
+            }
             // Before anything can play: the first track of a restored queue has to come out at the
             // level the user left, not at 100.
             let _ = player.set_volume(state::saved_volume(&db));
@@ -686,15 +709,21 @@ pub fn run() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 match window.label() {
                     "main" => {
-                        let hide = window
-                            .app_handle()
-                            .try_state::<Arc<AppState>>()
-                            .map(|s| close_hides(s.db.get_setting("close_to_tray").as_deref()))
-                            .unwrap_or(true);
+                        let hide = tray::available()
+                            && window
+                                .app_handle()
+                                .try_state::<Arc<AppState>>()
+                                .map(|s| close_hides(s.db.get_setting("close_to_tray").as_deref()))
+                                .unwrap_or(true);
                         if hide {
                             api.prevent_close();
                             let _ = window.hide();
                             tray::set_main_visible(window.app_handle(), false);
+                        } else if let Some(state) = window.app_handle().try_state::<Arc<AppState>>()
+                        {
+                            // Really quitting: persist the exact resume position, the same thing
+                            // the tray's Quit item does.
+                            state.flush_position();
                         }
                     }
                     // Nothing in the widget closes it, but a WM shortcut still can. Turn that into
@@ -727,6 +756,9 @@ pub fn run() {
 }
 
 /// ✕ hides to tray unless the user explicitly set close_to_tray=false (unset → default on).
+///
+/// Gated by [`tray::available`] at the call site: with no tray to click, hiding would strand the
+/// app with no window (#232).
 fn close_hides(setting: Option<&str>) -> bool {
     setting != Some("false")
 }

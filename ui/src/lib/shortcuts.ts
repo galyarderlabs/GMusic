@@ -4,7 +4,7 @@
 // it also owns the ctrl+wheel gesture.
 import { browser } from '$app/environment';
 import * as api from './api';
-import { cycleRepeat, np, nudgeVolume, playback, toggleMute, ui } from './player.svelte';
+import { cycleRepeat, np, nudgeVolume, playback, refreshView, toggleMute, ui } from './player.svelte';
 
 const IS_MAC = browser && navigator.platform.startsWith('Mac');
 
@@ -41,6 +41,14 @@ export function initShortcuts(mini = false) {
 	const onKey = (e: KeyboardEvent) => {
 		// Focused controls (including track selection) have already handled this key.
 		if (e.defaultPrevented) return;
+		// F5 reloads the page here for the same reason it does in a browser, and like a browser it
+		// works from inside a text field too. Ctrl+R is not a second way in: that key cycles repeat.
+		// The mini widget has no page to reload, so it keeps the key for the OS.
+		if (!mini && e.key === 'F5') {
+			refreshView();
+			e.preventDefault();
+			return;
+		}
 		if (!e.ctrlKey && !e.metaKey) {
 			// Space also activates a focused button and scrolls the page, so it is swallowed either
 			// way once we know it isn't being typed.

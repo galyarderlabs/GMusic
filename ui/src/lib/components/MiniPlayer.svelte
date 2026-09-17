@@ -16,7 +16,8 @@
 		ShuffleIcon,
 		RepeatIcon,
 		RepeatOne01Icon,
-		FavouriteIcon,
+		ThumbsUpIcon,
+		ThumbsDownIcon,
 		MusicNote01Icon,
 		MaximizeScreenIcon,
 		Mic01Icon,
@@ -31,7 +32,7 @@
 		cycleRepeat,
 		dragVolume,
 		toggleMute,
-		toggleNowPlayingLike,
+		toggleNowPlayingRating,
 		wheelVolume
 	} from '$lib/player.svelte';
 	import { thumb } from '$lib/thumb';
@@ -74,11 +75,11 @@
 	let volDragging = $state(false);
 	const volOpen = $derived(volHover || volDragging);
 
-	// Pop the heart once when favouriting (not when un-favouriting), same as the player bar.
+	// Pop the thumb once when liking (not when clearing it), same as the player bar.
 	let justLiked = $state(false);
 	function toggleLike() {
 		if (playback.rating !== 'like') justLiked = true;
-		toggleNowPlayingLike();
+		toggleNowPlayingRating();
 	}
 
 	// Seek: hold the dragged value locally so incoming position ticks can't yank the thumb out
@@ -144,7 +145,7 @@
 		<div class="flex items-center justify-end gap-0.5">
 			<!-- Volume. The slider sits *in flow* to the left of its icon and grows from zero width:
 			     the row is right-aligned, so it expands into the empty space on its left and the
-			     heart never moves. In flow, and with no gap, so the wrapper's own box covers both —
+			     rating buttons never move. In flow, and with no gap, so the wrapper's own box covers both —
 			     absolute-positioned with a margin, the pointer left the hover target on its way to
 			     the slider and the slider collapsed before it got there. -->
 			<div
@@ -198,10 +199,22 @@
 					>
 						<!-- fill-current + text-primary is the same "liked" treatment the player bar uses. -->
 						<HugeiconsIcon
-							icon={FavouriteIcon}
+							icon={ThumbsUpIcon}
 							class="h-4 w-4 {playback.rating === 'like' ? 'fill-current text-primary' : ''}"
 						/>
 					</span>
+				</button>
+				<!-- Dislike skips the track and drops it from the queue (see dropDisliked), which is
+				     the whole point of the request: no need to reopen the main window for it. -->
+				<button
+					class={artBtn}
+					onclick={() => toggleNowPlayingRating('dislike')}
+					aria-label={playback.rating === 'dislike' ? t('player.remove_dislike') : t('common.dislike')}
+				>
+					<HugeiconsIcon
+						icon={ThumbsDownIcon}
+						class="h-4 w-4 {playback.rating === 'dislike' ? 'fill-current' : ''}"
+					/>
 				</button>
 			{/if}
 		</div>

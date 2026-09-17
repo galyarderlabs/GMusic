@@ -12,6 +12,7 @@
 //! Both backends expose the same two entry points — [`init`] and [`set_playing`] — so lib.rs
 //! never learns which one is live.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter, Manager};
@@ -19,6 +20,20 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::state::AppState;
 
 pub use imp::{init, set_icon, set_playing};
+
+/// Whether a tray icon actually exists for the user to click.
+///
+/// On Linux it is a StatusNotifierItem, and a bar that only speaks the older XEmbed systray spec
+/// (i3bar, dwm, xfce4-panel without its SNI plugin) runs no `StatusNotifierWatcher` at all, so
+/// registration fails and no icon ever appears (#232). Closing to a tray that isn't there leaves
+/// the app running with no window and no way back except a second launch, so ✕ checks this before
+/// hiding. Optimistic: only the Linux backend ever clears it, once it knows there is no watcher.
+static AVAILABLE: AtomicBool = AtomicBool::new(true);
+
+/// Can the window be brought back from the tray? See [`AVAILABLE`].
+pub fn available() -> bool {
+    AVAILABLE.load(Ordering::Relaxed)
+}
 
 /// Bring the main window back from close-to-tray, minimize, or the mini player. Every "come back"
 /// path — tray menu, tray click, second launch, the widget's restore button — goes through here so
@@ -89,10 +104,11 @@ fn handle_menu(app: &AppHandle, id: &str) {
 
 #[cfg(target_os = "linux")]
 mod imp {
+    use std::sync::atomic::Ordering;
     use std::sync::OnceLock;
 
     use ksni::menu::{MenuItem, StandardItem};
-    use ksni::{Handle, Icon, Tray, TrayMethods};
+    use ksni::{Handle, Icon, OfflineReason, Tray, TrayMethods};
     use tauri::AppHandle;
 
     use super::{handle_menu, show_main};
@@ -116,6 +132,21 @@ mod imp {
 
         fn icon_pixmap(&self) -> Vec<Icon> {
             self.icon.clone()
+        }
+
+        fn watcher_online(&self) {
+            super::AVAILABLE.store(true, Ordering::Relaxed);
+        }
+
+        /// No watcher on the bus: the icon is not showing anywhere, whatever the user's setting
+        /// says. Returning `true` keeps the service running, so a watcher that appears later
+        /// (`snixembed`, a restarted shell) still gets the icon and flips this back.
+        fn watcher_offline(&self, reason: OfflineReason) -> bool {
+            tracing::warn!(
+                "tray: no StatusNotifierWatcher ({reason:?}); ✕ will quit instead of hiding"
+            );
+            super::AVAILABLE.store(false, Ordering::Relaxed);
+            true
         }
 
         /// The entire reason this backend exists: Plasma dispatches a left-click here.
@@ -158,12 +189,19 @@ mod imp {
         let tray = GMusicTray { app: app.clone(), playing: false, icon };
         // Registering with the StatusNotifierWatcher is async and can outlive setup(); a failure
         // here costs the tray, not the app, so it's logged rather than propagated.
+        //
+        // `assume_sni_available`: a missing watcher becomes a `watcher_offline` call instead of a
+        // hard error, which both keeps the service alive for a watcher that starts later and is
+        // how `AVAILABLE` learns the truth (spawn calls it before returning `Ok`).
         tauri::async_runtime::spawn(async move {
-            match tray.spawn().await {
+            match tray.assume_sni_available(true).spawn().await {
                 Ok(handle) => {
                     let _ = HANDLE.set(handle);
                 }
-                Err(e) => tracing::error!("tray: StatusNotifierItem registration failed: {e}"),
+                Err(e) => {
+                    super::AVAILABLE.store(false, Ordering::Relaxed);
+                    tracing::error!("tray: StatusNotifierItem registration failed: {e}");
+                }
             }
         });
         Ok(())
@@ -250,5 +288,21 @@ mod imp {
         if let Some(tray) = app.tray_by_id("main") {
             let _ = tray.set_icon(Some(icon.clone()));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::Ordering;
+
+    use super::{available, AVAILABLE};
+
+    /// The gate lib.rs reads before hiding the window on ✕.
+    #[test]
+    fn no_watcher_means_no_close_to_tray() {
+        assert!(available(), "a desktop with a working tray is the default");
+        AVAILABLE.store(false, Ordering::Relaxed); // what watcher_offline does on i3bar (#232)
+        assert!(!available());
+        AVAILABLE.store(true, Ordering::Relaxed);
     }
 }

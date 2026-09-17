@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Ctrl+H, ⌘/ on macOS: what the keyboard can do. Nothing in the chrome points at the shortcuts, so this is
-	// where they are discoverable. It documents the zoom keys too (zoom.ts owns those) — from the
+	// where they are discoverable. It documents the zoom keys too (zoom.svelte.ts owns those) — from the
 	// outside they are the same feature, and a list that only covers half of them is worse than none.
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { HELP_COMBO, MOD, MUTE_COMBO } from '$lib/shortcuts';
@@ -25,6 +25,7 @@
 		{
 			title: t('dialogs.shortcuts.group_general'),
 			rows: [
+				[t('dialogs.shortcuts.refresh_page'), 'F5'],
 				[t('dialogs.shortcuts.search_anywhere'), `${MOD}K`],
 				[t('dialogs.shortcuts.toggle_now_playing'), `${MOD}E`],
 				[t('dialogs.shortcuts.zoom_in'), `${MOD}+`],
