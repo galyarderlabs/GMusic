@@ -1,4 +1,24 @@
 {
+	"selection": {
+		"actions": "Selected track actions",
+		"count": "{count} selected",
+		"selected": "Selected",
+		"not_selected": "Not selected",
+		"hidden": "{count} hidden",
+		"enter": "Select tracks",
+		"exit": "Leave select mode",
+		"hint": "Pick tracks to act on them",
+		"select_all": "Select all ({count})",
+		"clear": "Clear",
+		"track": "{title}. Space to select, Enter to play.",
+		"track_guest": "{title}. Space to select, Enter to add to the session queue.",
+		"select_track": "Select {title}",
+		"lost": "{count} selected tracks are no longer in this list.",
+		"pending": "Finding {count} selected tracks in the pages still loading.",
+		"local_playlist": "Local files cannot be added to a YouTube playlist.",
+		"account_changed": "Stopped adding songs because the account changed.",
+		"playlist_partial": "Added {added} to {playlist}; {duplicates} already there; {remaining} unconfirmed. {error}"
+	},
 	"common": {
 		"loading": "Loading...",
 		"retry": "Retry",
@@ -60,7 +80,9 @@
 		"filter_library": "Filter your library…",
 		"command_description": "Search songs, albums, artists and playlists",
 		"shuffle_all": "Shuffle all",
-		"play_all": "Play all"
+		"play_all": "Play all",
+		"top_result": "Top result",
+		"all_results_for": "All results for “{query}”"
 	},
 	"nav": {
 		"home": "Home",
@@ -79,10 +101,11 @@
 		"sign_in_hint": "Sign in with your Google account to reach your YouTube Music library and playlists.",
 		"add_account": "Add account",
 		"remove_account": "Remove account",
-		"remove_account_title": "Remove from Limusic?",
+		"remove_account_title": "Remove from GMusic?",
 		"remove_account_desc": "{name} is only removed from this list. The Google account itself is not affected, and you can sign in with it again whenever you like.",
 		"saved_accounts_hint": "Pick a saved account to switch to it.",
-		"history": "History"
+		"history": "History",
+		"no_channels": "YouTube did not return any selectable channels."
 	},
 	"player": {
 		"play": "Play",
@@ -154,7 +177,8 @@
 		"show_section": "Show {title} on home",
 		"hide_section": "Hide {title} from home",
 		"feed_empty": "Your home feed came back empty this time.",
-		"signed_out_hint": "Sign in and home fills up with mixes and playlists built from what you listen to."
+		"signed_out_hint": "Sign in and home fills up with mixes and playlists built from what you listen to.",
+		"add_to_end": "Add to the end"
 	},
 	"history": {
 		"title": "History",
@@ -205,7 +229,18 @@
 		"every_upload": "Every track you’ve uploaded to YouTube Music",
 		"no_uploads": "Nothing uploaded yet. Songs you upload at music.youtube.com show up here.",
 		"no_upload_albums": "No uploaded albums yet. Albums you upload at music.youtube.com show up here.",
-		"uploads_signed_out": "Sign in to see the music you’ve uploaded to YouTube Music."
+		"uploads_signed_out": "Sign in to see the music you’ve uploaded to YouTube Music.",
+		"songs_signed_out": "Sign in to see the songs saved in your YouTube Music library. Music on this machine is in the Local tab.",
+		"no_library_songs": "No songs in your library yet. Hit the ⋯ on a song and save it, or like it, and it lands here.",
+		"empty_signed_out": "Nothing saved yet. Open a playlist or album and hit Save to library, or sign in for the one on your account.",
+		"empty": "Your library is empty.",
+		"no_saved_playlists": "No playlists yet. Open one and hit Save to library to keep it here.",
+		"no_saved_albums": "No saved albums yet. Open an album and hit Save to library.",
+		"no_saved_artists": "No artists yet. Save one from its page to keep it here.",
+		"no_artists": "No artists yet. They show up once you save their songs or albums.",
+		"on_repeat": "On Repeat",
+		"on_repeat_subtitle": "{count} songs you've played most this month",
+		"songs_count": "{count} songs"
 	},
 	"local": {
 		"scanning": "Scanning folder...",
@@ -215,13 +250,19 @@
 		"artists_count": "Artists ({count})",
 		"songs_count": "Songs ({count})",
 		"add_folder": "Add folder",
-		"pick_folder_dialog": "Add a music folder"
+		"pick_folder_dialog": "Add a music folder",
+		"folders": "Folders",
+		"folders_hint": "Music in these folders plays without an internet connection.",
+		"no_folders": "No folders yet. Add the one your music sits in and it shows up here.",
+		"nothing_playable": "Nothing playable found in those folders yet. Looking for mp3, flac, m4a, aac, ogg, opus, wav, wma, aiff, ape, wv and mka files."
 	},
 	"settings": {
 		"title": "Settings",
 		"tabs": {
 			"general": "General",
 			"general_hint": "History, integrations and how the app starts.",
+			"discord": "Discord",
+			"discord_hint": "How your Rich Presence card looks.",
 			"themes": "Appearance",
 			"themes_hint": "Colors, fonts and the player view.",
 			"playback": "Playback",
@@ -248,7 +289,11 @@
 			"updates": "Updates",
 			"report": "Report a problem",
 			"whats_new": "What's new",
-			"support": "Support"
+			"support": "Support",
+			"discord_status": "Status",
+			"discord_card": "Card",
+			"discord_links": "Clickable",
+			"discord_buttons": "Buttons"
 		},
 		"general": {
 			"language": "Interface language",
@@ -271,15 +316,12 @@
 			"stream_clients_hint": "Turn a client off to skip it when resolving streams. Overridden by the {var} env var."
 		},
 		"themes": {
-			"accent_themes": "Accent Themes",
 			"interface_font": "Interface font",
 			"load_font_file": "Load font from file",
 			"custom_colors": "Custom Colors",
 			"primary_color": "Primary Accent",
 			"background_color": "Background",
 			"reset_theme": "Reset to default theme",
-			"accent_colors": "Accent colors",
-			"palettes": "Palettes",
 			"your_fonts": "Your fonts",
 			"custom_font": "Custom…",
 			"font_placeholder": "Font installed on this computer, e.g. Inter",
@@ -368,8 +410,62 @@
 			"report_issue_hint": "Opens GitHub in your browser, with the version and system filled in.",
 			"report_issue_button": "Report",
 			"kofi": "Buy me a coffee",
-			"kofi_hint": "Limusic is free and stays free. Ko-fi is there if you feel like chipping in.",
+			"kofi_hint": "GMusic is free and stays free. Ko-fi is there if you feel like chipping in.",
 			"kofi_button": "Open Ko-fi"
+		},
+		"discord": {
+			"enable": "Rich Presence",
+			"enable_hint": "Show the currently playing song on your Discord profile.",
+			"off_notice": "Rich Presence is off, so this is not on your profile. The preview still follows your changes.",
+			"show_paused": "Show when paused",
+			"show_paused_hint": "Keep the card up while the track is paused. Discord has no paused state, so the progress bar is dropped rather than left running.",
+			"hide_details": "Hide details",
+			"hide_details_hint": "Say only that music is playing. No title, artist, album, artwork, progress bar or buttons leave your machine.",
+			"status_line": "Status text",
+			"status_line_hint": "What Discord shows next to your name in the member list. The profile card below always shows the app name.",
+			"status_app": "App name",
+			"status_line1": "Line 1",
+			"status_line2": "Line 2",
+			"app_name": "App name",
+			"app_name_hint": "Replaces \"GMusic\" wherever the app name appears. Leave empty to keep it.",
+			"app_name_placeholder": "GMusic",
+			"line1": "Line 1",
+			"line1_hint": "The bold line, right under the header.",
+			"line2": "Line 2",
+			"line2_hint": "The smaller line below it.",
+			"content_title": "Song title",
+			"content_artist": "Artist",
+			"content_album": "Album",
+			"content_artist_album": "Artist and album",
+			"content_off": "Hidden",
+			"cover": "Album art",
+			"cover_hint": "Show the artwork next to the track.",
+			"badge": "Provider badge",
+			"badge_hint": "Mark the artwork with a small GMusic icon, the way Spotify and Apple Music cards do.",
+			"line3": "Line 3",
+			"line3_hint": "The last line. Discord also uses it as the artwork’s hover text, so it needs the album art on.",
+			"timestamps": "Progress bar",
+			"timestamps_hint": "Show elapsed and remaining time under the track.",
+			"links_hint": "Turn a part of the card into a link. Discord opens it in YouTube Music, and the target follows what that part shows: a line with the album opens the album.",
+			"link_line1": "Line 1 is clickable",
+			"link_line2": "Line 2 is clickable",
+			"link_cover": "Album art is clickable",
+			"button1": "First button",
+			"button2": "Second button",
+			"buttons_hint": "Discord shows at most two, and never on your own profile: only other people see them. A button whose target this track has no link for is skipped.",
+			"button_listen": "Listen on YouTube Music",
+			"button_album": "View album",
+			"button_artist": "View artist",
+			"button_app": "Get GMusic",
+			"button_off": "None",
+			"preview": "Preview",
+			"preview_live": "Now playing",
+			"preview_sample": "Sample track",
+			"preview_paused": "Paused, so this is not on your profile right now. Turn on \"Show when paused\" to keep it up.",
+			"reset": "Reset to defaults",
+			"preview_status": "Member list",
+			"preview_you": "You",
+			"preview_card": "Profile card"
 		}
 	},
 	"dialogs": {
@@ -594,6 +690,19 @@
 		"app_icon_set": "App icon changed",
 		"blocked_copied": "Copied {count} blocked artists as JSON",
 		"blocked_artist": "Blocked {name}",
-		"unblocked_artist": "Unblocked {name}"
+		"unblocked_artist": "Unblocked {name}",
+		"added_to_shortcuts": "Added to shortcuts",
+		"already_in_shortcuts": "Already in shortcuts",
+		"playing_next_one": "Playing next",
+		"playing_next": "{count} songs play next",
+		"added_to_queue_one": "Added to queue",
+		"added_to_queue": "Added {count} songs to the queue",
+		"liked": "Added to liked songs",
+		"disliked": "Disliked",
+		"rating_removed": "Rating removed",
+		"subscribed": "Subscribed to {name}",
+		"unsubscribed": "Unsubscribed",
+		"signed_in_as": "Signed in as {name}",
+		"switched_to": "Switched to {name}"
 	}
 }

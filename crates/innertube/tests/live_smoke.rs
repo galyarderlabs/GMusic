@@ -242,7 +242,7 @@ async fn every_surface_yields_a_scrobbleable_artist() {
 
     // Search rows, the up-next queue, and an artist page (top songs + every song card in its
     // carousels, which is where the "• 1.7B views" strings came from).
-    let songs = it.search_songs(c, "Barbie Girl Aqua").await.expect("search");
+    let songs = it.search_songs(c, "Barbie Girl Aqua", false).await.expect("search");
     for t in songs.items.iter().take(5) {
         checked += 1;
         note(&mut problems, "search", &t.title, &t.artists);
@@ -253,7 +253,7 @@ async fn every_surface_yields_a_scrobbleable_artist() {
             note(&mut problems, "queue", &t.title, &t.artists);
         }
     }
-    let found = it.search_all(c, "Aqua").await.expect("search_all");
+    let found = it.search_all(c, "Aqua", false).await.expect("search_all");
     if let Some(artist) = found.artists.first() {
         let page = it.artist(c, &artist.id).await.expect("artist page");
         for t in &page.top_songs {
@@ -449,7 +449,7 @@ async fn song_rows_carry_library_tokens() {
     }
 
     let raw = it.search_json(client, "daft punk", Some("EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D")).await;
-    let search = it.search_songs(client, "daft punk").await.expect("search");
+    let search = it.search_songs(client, "daft punk", false).await.expect("search");
     let with_tokens = search.items.iter().filter(|s| s.library.is_some()).count();
     eprintln!("search: {}/{} rows carry a library action", with_tokens, search.items.len());
     if with_tokens == 0 {

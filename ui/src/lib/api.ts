@@ -2,6 +2,7 @@
 // touches YouTube; everything here is a Tauri command or event payload.
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { t } from './i18n.svelte';
 
 /** How the signed-in user rated a track (innertube `Rating`). The three states are mutually
  *  exclusive: liking a disliked track clears the dislike, and vice versa. */
@@ -312,9 +313,13 @@ export interface ArtistPage {
 }
 
 // --- commands (context/11) -----------------------------------------------------------------
-export const search = (query: string) => invoke<SongItem[]>('search', { query });
+// `recordHistory` is true only for a query the user submitted: a signed-in search is written to the
+// account's YouTube search history, so a typeahead preview must stay anonymous (#203).
+export const search = (query: string, recordHistory = false) =>
+	invoke<SongItem[]>('search', { query, recordHistory });
 /** Unfiltered search → categorized sections. */
-export const searchAll = (query: string) => invoke<SearchResults>('search_all', { query });
+export const searchAll = (query: string, recordHistory = false) =>
+	invoke<SearchResults>('search_all', { query, recordHistory });
 /** Filtered "Show more" card search for one category (albums / artists / playlists). */
 export const searchCards = (query: string, category: 'albums' | 'artists' | 'playlists') =>
 	invoke<BrowseItem[]>('search_cards', { query, category });
@@ -443,7 +448,26 @@ export const closeMini = () => invoke<void>('close_mini');
 /** `params` is a `HomeChip.params` token — omit for the unfiltered feed. */
 export const getHome = (params?: string) => invoke<HomePage>('get_home', { params });
 export const getHomeMore = (token: string) => invoke<HomePage>('get_home_more', { token });
-export const getLibrary = () => invoke<BrowseItem[]>('get_library');
+/**
+ * On Repeat is the app's own playlist (Rust builds it from this machine's play counts), so its
+ * title and subtitle are our English rather than YouTube's, and Rust cannot translate them: the
+ * UI language lives in the webview's localStorage and never reaches it. Relabelled here, on the
+ * way in, because every surface that draws the tile reads it from one of these two calls.
+ */
+const relabelOnRepeat = (item: BrowseItem): BrowseItem =>
+	item.id !== ON_REPEAT_ID
+		? item
+		: {
+				...item,
+				title: t('library.on_repeat'),
+				// The count is Rust's leading number ("20 songs"); left alone if it ever isn't.
+				subtitle: Number.isNaN(parseInt(item.subtitle ?? '', 10))
+					? item.subtitle
+					: t('library.songs_count', { count: parseInt(item.subtitle!, 10) })
+			};
+
+export const getLibrary = () =>
+	invoke<BrowseItem[]>('get_library').then((items) => items.map(relabelOnRepeat));
 export const getLibraryAlbums = () => invoke<BrowseItem[]>('get_library_albums');
 export const getLibraryArtists = () => invoke<BrowseItem[]>('get_library_artists');
 export const getUploadAlbums = () => invoke<BrowseItem[]>('get_upload_albums');
@@ -457,7 +481,15 @@ export const getHistory = () => invoke<HistoryGroup[]>('get_history');
  * the list in, which is the one a fresh visit wants (it is what YouTube Music would show).
  */
 export const getPlaylist = (id: string, sort?: ServerSort, desc?: boolean) =>
-	invoke<PlaylistPage>('get_playlist', { id, sort, desc });
+	invoke<PlaylistPage>('get_playlist', { id, sort, desc }).then((page) =>
+		id !== ON_REPEAT_ID
+			? page
+			: {
+					...page,
+					title: t('library.on_repeat'),
+					subtitle: t('library.on_repeat_subtitle', { count: page.items.length })
+				}
+	);
 /**
  * Store a sort order on a playlist, so YouTube Music and every other client show it the same way.
  * Only for a list whose `sortMenu.editable` is true.

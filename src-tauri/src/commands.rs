@@ -14,18 +14,29 @@ use crate::state::{AppState, ON_REPEAT_ID, ON_REPEAT_LIMIT, ON_REPEAT_WINDOW_SEC
 
 type St<'a> = State<'a, Arc<AppState>>;
 
+/// `record_history`: true only for a query the user submitted. A typeahead preview passes false and
+/// goes out unauthenticated, so half-typed prefixes never reach the account's search history (#203).
 #[tauri::command]
-pub async fn search(state: St<'_>, query: String) -> Result<Vec<SongItem>, String> {
+pub async fn search(
+    state: St<'_>,
+    query: String,
+    record_history: bool,
+) -> Result<Vec<SongItem>, String> {
     let client = state.clients.get(innertube::METADATA_CLIENT).ok_or("metadata client missing")?;
-    let result = state.it.search_songs(client, &query).await.map_err(|e| e.to_string())?;
+    let result =
+        state.it.search_songs(client, &query, record_history).await.map_err(|e| e.to_string())?;
     Ok(result.items)
 }
 
-/// Unfiltered search → categorized sections for the search page.
+/// Unfiltered search → categorized sections for the search page. `record_history` as in [`search`].
 #[tauri::command]
-pub async fn search_all(state: St<'_>, query: String) -> Result<SearchResults, String> {
+pub async fn search_all(
+    state: St<'_>,
+    query: String,
+    record_history: bool,
+) -> Result<SearchResults, String> {
     let client = metadata_client(&state)?;
-    state.it.search_all(client, &query).await.map_err(|e| e.to_string())
+    state.it.search_all(client, &query, record_history).await.map_err(|e| e.to_string())
 }
 
 /// Filtered "Show more" search for one category (albums / artists / playlists).
@@ -179,13 +190,14 @@ pub async fn get_queue(state: St<'_>) -> Result<serde_json::Value, String> {
 /// `visitor_data`) and internal blobs (`queue_json`, `queue_index`, `queue_position`) never cross
 /// into the webview: they'd otherwise ship the login credential to the renderer on every open, and
 /// the webview can't overwrite them either.
-const UI_SETTINGS: [&str; 16] = [
+const UI_SETTINGS: [&str; 17] = [
     "volume",
     "proxy",
     "quality",
     "enable_history",
     "disabled_stream_clients",
     "discord_rpc",
+    "discord_rpc_config",
     "close_to_tray",
     "autostart",
     "autoplay",
@@ -280,6 +292,11 @@ pub async fn set_setting(
     // to see it take effect.
     if key == "discord_rpc" {
         state.set_discord_enabled(value == "true");
+    }
+    // Same reasoning for the card layout: the settings tab previews it live, so the real card has
+    // to follow without waiting for the next track.
+    if key == "discord_rpc_config" {
+        state.set_discord_config(&value);
     }
     // Applies to what's fetched from here on: the live queue keeps whatever is already in it.
     if key == "hide_videos" {

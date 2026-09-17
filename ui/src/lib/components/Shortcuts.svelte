@@ -271,7 +271,7 @@
 					<div
 						class="flex h-16 items-center justify-center rounded-xl border border-dashed border-primary text-xs font-medium text-primary"
 					>
-						Add to the end
+						{t('home.add_to_end')}
 					</div>
 				{/if}
 			</div>

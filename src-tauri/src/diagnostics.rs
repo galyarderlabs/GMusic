@@ -32,6 +32,7 @@ const FRESH_LOG_BYTES: u64 = 4096;
 /// reported as `set` instead of printed.
 const ENV_KEYS: &[&str] = &[
     "RUST_LOG",
+    "LIMUSIC_MPV_LOG",
     "LIMUSIC_PROXY",
     "LIMUSIC_DISABLED_CLIENTS",
     "WEBKIT_DISABLE_DMABUF_RENDERER",
@@ -268,11 +269,23 @@ mod tests {
             "visitorData=CgtabcdefghijklmnopqrstuvwxyzABCDEFGHIJ0123456789\n",
             "video_id=dQw4w9WgXcQ proxy at 127.0.0.1:8080\n",
             "INFO app_lib::potoken: session token still valid, skipping the bootstrap\n",
+            // mpv's own log reaches this file now (LIMUSIC_MPV_LOG), and at `v` it prints the
+            // whole signed URL it was handed.
+            "INFO mpv: [cplayer] Playing: https://rr5---sn-abc.googlevideo.com/videoplayback?expire=1789575360&sig=AE0s2JYwRgIhAIzeTLdUmzZHPIYZUZW7LL1NlnqZ50b1nk\n",
         );
         let out = redact(log);
-        for leaked in ["aB3dEfGhIjKlMnOpQr", "AbCdEf", "203.0.113.9", "zZ9", "0123456789"] {
+        for leaked in [
+            "aB3dEfGhIjKlMnOpQr",
+            "AbCdEf",
+            "203.0.113.9",
+            "zZ9",
+            "0123456789",
+            "AE0s2JYwRgIhAIzeTLdUmzZHPIYZUZW7LL1NlnqZ50b1nk",
+        ] {
             assert!(!out.contains(leaked), "{leaked} survived redaction:\n{out}");
         }
+        // An mpv line keeps its subsystem prefix, which is the part that says where a stall was.
+        assert!(out.contains("mpv: [cplayer] Playing:"), "{out}");
         // Still readable: the loopback proxy, the video id and the host stay.
         assert!(out.contains("dQw4w9WgXcQ"), "{out}");
         assert!(out.contains("127.0.0.1"), "{out}");

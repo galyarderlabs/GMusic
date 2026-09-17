@@ -16,6 +16,9 @@
         BookmarkCheck02Icon,
     } from "@hugeicons/core-free-icons";
     import TrackRow from "$lib/components/TrackRow.svelte";
+    import TrackSelectionBar from "$lib/components/TrackSelectionBar.svelte";
+    import TrackSelectButton from "$lib/components/TrackSelectButton.svelte";
+    import { trackSelection } from "$lib/selection.svelte";
     import TrackFilter, {
         filterTracks,
     } from "$lib/components/TrackFilter.svelte";
@@ -64,6 +67,7 @@
     const id = $derived(page.params.id ?? "");
     // The rows actually on screen. Identical to `album.items` with no query typed.
     const shown = $derived(filterTracks(album?.items ?? [], query));
+    const selection = trackSelection(() => album?.items ?? [], () => shown, () => `${auth.epoch}:${id}`);
     // A local album has no YouTube playlist behind it: nothing to save or add to a playlist.
     // Playing, shuffling and Shortcuts all work exactly the same.
     const isLocal = $derived(api.isLocalId(id));
@@ -165,7 +169,7 @@
         const next = !inLibrary;
         if (!auth.account?.signedIn || !a.playlistId) {
             toggleSaved(asItem());
-            toast.success(next ? "Saved to library" : "Removed from library");
+            toast.success(next ? t('library.saved_to_library') : t('toasts.removed_from_library'));
             return;
         }
         // Signed in: YouTube owns it from here. The local row is kept in step rather than dropped,
@@ -173,7 +177,7 @@
         // offline); `noteLibrary` flags it synced, so nothing offers a local-only removal.
         if (a.inLibrary === next) {
             noteLibrary(asItem(), next);
-            toast.success(next ? "Saved to library" : "Removed from library");
+            toast.success(next ? t('library.saved_to_library') : t('toasts.removed_from_library'));
             return; // YouTube already agrees; only the local row had to move
         }
         a.inLibrary = next;
@@ -181,7 +185,7 @@
         try {
             await api.setAlbumSaved(a.playlistId, next);
             noteLibrary(asItem(), next);
-            toast.success(next ? "Saved to library" : "Removed from library");
+            toast.success(next ? t('library.saved_to_library') : t('toasts.removed_from_library'));
         } catch (e) {
             a.inLibrary = !next;
             toast.error(String(e));
@@ -365,6 +369,10 @@
                         {inLibrary ? t("library.in_library") : t("library.save_to_library")}
                     </button>
                 {/if}
+                <TrackSelectButton
+                    {selection}
+                    class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border transition hover:bg-accent/10 hover:text-foreground"
+                />
                 <button
                     class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-muted-foreground transition hover:bg-accent/10 hover:text-foreground"
                     onclick={openMenu}
@@ -468,9 +476,12 @@
 
     <!-- Numbered track list -->
     <div class="content-in p-6 pt-2">
-        {#each shown as item, i (item.video_id + i)}
+        <TrackSelectionBar {selection} from={album.title} />
+        {#each shown as item, i (JSON.stringify([item.video_id, i]))}
             <TrackRow
                 song={item}
+                {selection}
+                selectionKey={selection.visibleKeys[i]}
                 index={i}
                 hideThumb
                 showPlayCount

@@ -48,7 +48,11 @@
 			ui.channelPickerRequired = false;
 			ui.channelPickerOpen = false;
 			ui.channelIdentities = [];
-			toast.success(wasRequired ? `Signed in as ${identity.name}` : `Switched to ${identity.name}`);
+			toast.success(
+				wasRequired
+					? t('toasts.signed_in_as', { name: identity.name })
+					: t('toasts.switched_to', { name: identity.name })
+			);
 		} catch (e) {
 			error = String(e);
 			toast.error(error);
@@ -99,9 +103,7 @@
 					<Button variant="outline" size="sm" onclick={loadIdentities}>{t('common.retry')}</Button>
 				</div>
 			{:else if ui.channelIdentities.length === 0}
-				<p class="px-3 py-8 text-center text-sm text-muted-foreground">
-					YouTube did not return any selectable channels.
-				</p>
+				<p class="px-3 py-8 text-center text-sm text-muted-foreground">{t('nav.no_channels')}</p>
 			{:else}
 				{#each ui.channelIdentities as identity (identity.selectionKey)}
 					<button
@@ -147,7 +149,7 @@
 				</Button>
 			{:else}
 				<Button variant="outline" size="sm" onclick={() => (ui.channelPickerOpen = false)}>
-					Cancel
+					{t('common.cancel')}
 				</Button>
 			{/if}
 		</div>

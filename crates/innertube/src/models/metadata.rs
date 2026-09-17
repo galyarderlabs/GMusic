@@ -897,7 +897,11 @@ fn split_subtitle(runs: Option<&Vec<Value>>) -> (String, Option<String>, Option<
         groups.remove(0);
     }
     let groups: Vec<String> = groups.into_iter().map(|g| g.text).collect();
-    let artists = groups.first().cloned().unwrap_or_default();
+    // A row can carry no artist field at all: YouTube drops it when the query is the artist, so
+    // every song row of a "boygenius" search reads "Song • 3:55". The length is not a name, and
+    // taken as one it reaches the player bar and the user's scrobbles (#216). Leave it empty and
+    // let `backfill_metadata` fill it from the player's author when the row is played.
+    let artists = groups.first().filter(|g| !is_duration(g)).cloned().unwrap_or_default();
     // Last group that is a duration is the duration; the middle is album.
     let duration = groups.iter().rev().find(|g| is_duration(g)).cloned();
     let album = groups.get(1).filter(|g| Some(*g) != duration.as_ref()).cloned();
@@ -1281,6 +1285,27 @@ mod tests {
         assert_eq!(plays(json!("The Album")).unwrap().album.as_deref(), Some("The Album"));
         assert_eq!(plays(json!("53M plays")).unwrap().album, None);
         assert_eq!(plays(json!("")).unwrap().album, None);
+    }
+
+    // #216: search for an artist by name and YouTube drops the artist from the song rows it
+    // returns, leaving "Song • 3:55". The length is not a name; taking it as one put a time in the
+    // artist field of the row, the card, the player bar and the scrobble.
+    #[test]
+    fn a_duration_only_subtitle_has_no_artist() {
+        let row = json!({
+            "playlistItemData": { "videoId": "abc123" },
+            "flexColumns": [
+                { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [{ "text": "Not Strong Enough" }] } } },
+                { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [
+                    { "text": "Song" }, { "text": " \u{2022} " }, { "text": "3:55" }
+                ] } } }
+            ]
+        });
+        let s = parse_list_item(&row).unwrap();
+        assert_eq!(s.artists, "");
+        assert!(s.artist_runs.is_empty());
+        assert_eq!(s.duration.as_deref(), Some("3:55"));
+        assert_eq!(s.album, None);
     }
 
     // An artist or album with a colon in its name ("Cast of EPIC: The Musical") used to read as the

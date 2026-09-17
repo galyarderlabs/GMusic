@@ -10,10 +10,12 @@ tracing = { workspace = true }
 thiserror = { workspace = true }
 # libmpv2 is the maintained fork of the abandoned `libmpv` crate (adopted in the Phase 0 spike).
 libmpv2 = "4"
+libmpv2-sys = "4"
 libc = "0.2"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [[example]]
 name = "play"

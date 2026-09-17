@@ -58,12 +58,3 @@ export function brightness(hex: string): number {
 export function isLight(hex: string): boolean {
 	return brightness(hex) > 0.6;
 }
-
-/**
- * `to` rewritten as the equivalent hue nearest `from`, so a plain numeric interpolation between the
- * two takes the short way round the wheel: from 350, a target of 10 comes back as 370, not a
- * backwards sweep through 180. The result may sit outside 0-360; oklch() and hsv both wrap it.
- */
-export function nearestHue(from: number, to: number): number {
-	return from + ((((to - from) % 360) + 540) % 360) - 180;
-}

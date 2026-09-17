@@ -18,6 +18,8 @@
 	import ArtistLine from './ArtistLine.svelte';
 	import ExplicitIcon from './ExplicitIcon.svelte';
 	import { t } from '$lib/i18n.svelte';
+	import type { TrackSelection } from '$lib/selection.svelte';
+	import { Checkbox } from './ui/checkbox';
 
 	let {
 		song,
@@ -31,7 +33,9 @@
 		onAdd,
 		onRemove,
 		removeLabel = t('player.remove_from_playlist'),
-		inLibraryList = false
+		inLibraryList = false,
+		selection,
+		selectionKey
 	}: {
 		song: SongItem;
 		/** Position badge when set (playlist/queue); omitted for flat search results. */
@@ -64,11 +68,33 @@
 		/** Adds a remove menu item (label via `removeLabel`). */
 		onRemove?: () => void;
 		removeLabel?: string;
+		/** Optional list-owned selection; the key identifies this occurrence, not the song. */
+		selection?: TrackSelection;
+		selectionKey?: string;
 	} = $props();
+	const selectionDescriptionId = $props.id();
 
 	// In a session as guest, clicking a song adds it to the shared queue instead of playing it —
 	// reflect that in the hover icon + label so the row doesn't lie.
 	const guestAdd = $derived(lt.role === 'guest');
+	// Only in select mode: at rest the row is a plain click-to-play row, with no checkbox and no
+	// Space/click rebinding.
+	const selectable = $derived(!!selection?.active && selectionKey !== undefined);
+	const selected = $derived(selection?.has(selectionKey) ?? false);
+
+	function select(range = false) {
+		if (selection && selectionKey !== undefined) selection.toggle(selectionKey, range);
+	}
+
+	function clickRow(e: MouseEvent) {
+		// In select mode the row selects; Enter (onKey) is what still plays it.
+		if (selectable) {
+			e.preventDefault();
+			select(e.shiftKey);
+			return;
+		}
+		onplay();
+	}
 
 	// Digits and colons, nothing else. A queue saved before the parser stopped reading a name with a
 	// colon in it ("Cast of EPIC: The Musical") as a length still holds those strings, and printing
@@ -89,7 +115,27 @@
 	// Only when the key lands on the row itself — keydowns bubble up from nested interactive
 	// elements (⋯ menu, artist link), and hijacking those would play the row instead.
 	function onKey(e: KeyboardEvent) {
-		if (e.target !== e.currentTarget) return;
+		if (e.target !== e.currentTarget) {
+			if (e.key === ' ') e.stopPropagation();
+			return;
+		}
+		if (selection && selectable) {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+				e.preventDefault();
+				e.stopPropagation();
+				selection.selectAll();
+				return;
+			}
+			if (e.key === 'Escape' || e.key === ' ') {
+				e.preventDefault();
+				e.stopPropagation();
+				if (!e.repeat) {
+					if (e.key === 'Escape') selection.exit();
+					else select(e.shiftKey);
+				}
+				return;
+			}
+		}
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
 			onplay();
@@ -128,13 +174,44 @@
 	role="button"
 	tabindex="0"
 	data-ctx
-	onclick={onplay}
+	onclick={clickRow}
 	onkeydown={onKey}
-	aria-label={guestAdd ? `Add ${song.title} to the session queue` : `Play ${song.title}`}
-	class="group flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/10 {active
+	data-selection-key={selectionKey}
+	data-selected={selectable ? selected : undefined}
+	aria-describedby={selectable ? selectionDescriptionId : undefined}
+	aria-label={selectable ? t(guestAdd ? 'selection.track_guest' : 'selection.track', { title: song.title }) : guestAdd ? `Add ${song.title} to the session queue` : `Play ${song.title}`}
+	class="group flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/10 {selected
+		? 'bg-primary/15'
+		: active
 		? 'bg-accent/10'
 		: ''} {compact ? '' : '[content-visibility:auto] [contain-intrinsic-size:auto_3.5rem]'}"
 >
+	{#if selectable}
+		<span id={selectionDescriptionId} class="sr-only">
+			{t(selected ? 'selection.selected' : 'selection.not_selected')}
+		</span>
+		<Checkbox
+			checked={selected}
+			aria-label={t('selection.select_track', { title: song.title })}
+			class="cursor-pointer"
+			onclick={(e) => {
+				// The list owns checked state, including Shift ranges whose endpoint stays selected.
+				e.preventDefault();
+				e.stopPropagation();
+				select(e.shiftKey);
+			}}
+			onkeydown={(e) => {
+				if (e.key === ' ') {
+					e.preventDefault(); e.stopPropagation();
+					if (!e.repeat) select(e.shiftKey);
+				}
+				if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); selection!.exit(); }
+				if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+					e.preventDefault(); e.stopPropagation(); selection!.selectAll();
+				}
+			}}
+		/>
+	{/if}
 	<div class="flex min-w-0 flex-1 items-center gap-3">
 		<div class="flex min-w-0 shrink-0 items-center gap-3">
 			{#if index !== undefined}
@@ -143,10 +220,10 @@
 						? 'text-primary'
 						: 'text-muted-foreground'}"
 				>
-					<span class="group-hover:opacity-0">{index + 1}</span>
+					<span class={selectable ? '' : 'group-hover:opacity-0'}>{index + 1}</span>
 					<HugeiconsIcon
 						icon={guestAdd ? PlayListAddIcon : PlayIcon}
-						class="absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 group-hover:opacity-100"
+						class="absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 {selectable ? '' : 'group-hover:opacity-100'}"
 					/>
 				</span>
 			{/if}
@@ -180,7 +257,10 @@
 			<div class="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
 				<ArtistLine runs={song.artist_runs} text={song.artists} />
 				{#if compact && duration}
-					<span class="shrink-0">· {duration}</span>
+					<!-- No leading dot with nothing before it: a search row can come back artist-less
+					     (YouTube drops the name when the query is the artist), leaving the length alone
+					     on the line. -->
+					<span class="shrink-0">{song.artists.trim() ? '· ' : ''}{duration}</span>
 				{/if}
 			</div>
 		</div>

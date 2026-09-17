@@ -146,7 +146,9 @@
 			putCached(`artist:${cid}`, { ...who, subscribed: next }); // keep the cache truthful
 			if (cid === id) subscribed = next; // left and came back: `load` repainted the old answer
 			noteLibrary(item, next); // so every card's menu agrees the artist is in the library
-			toast.success(next ? `Subscribed to ${who.name ?? ''}` : `Unsubscribed`);
+			toast.success(
+				next ? t('toasts.subscribed', { name: who.name ?? '' }) : t('toasts.unsubscribed')
+			);
 		} catch (e) {
 			if (cid === id) subscribed = !next; // revert, unless we've since left that artist
 			toast.error(String(e));

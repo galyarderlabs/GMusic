@@ -5,7 +5,7 @@
 //
 // Prints "ok" and exits 0, or throws on the first broken invariant.
 import { pickAccent, toAccent } from './artcolor.ts';
-import { brightness, hexToHsv, hsvToHex, nearestHue } from './color.ts';
+import { brightness, hexToHsv, hsvToHex } from './color.ts';
 
 /** An RGBA buffer: `n` pixels of each colour, in order. */
 const buf = (...runs: [[number, number, number], number][]) =>
@@ -41,16 +41,5 @@ if (toAccent(red, true) === toAccent(red, false)) throw new Error('band ignores 
 // Greyscale artwork keeps the user's theme instead of inventing a hue out of noise.
 if (pickAccent(buf([[20, 20, 20], 512], [[210, 210, 212], 512])) !== null) throw new Error('grey');
 if (pickAccent(new Uint8ClampedArray(0)) !== null) throw new Error('empty');
-
-// The crossfade takes the short way round the wheel: 350 -> 10 must pass through 0, not 180. The
-// CSS transition interpolates --art-h as a plain number, so this rewrite is the only thing keeping
-// a track change from sweeping the whole UI through an unrelated colour.
-if (nearestHue(350, 10) !== 370) throw new Error(`wrap: ${nearestHue(350, 10)}`);
-if (nearestHue(10, 350) !== -10) throw new Error(`wrap back: ${nearestHue(10, 350)}`);
-if (Math.abs(nearestHue(20, 200) - 20) !== 180) throw new Error('half turn');
-// Repeated hops stay continuous instead of snapping back into 0-360 each time.
-let h = 350;
-for (const t of [10, 30, 350, 10]) h = nearestHue(h, t);
-if (Math.abs(h - 370) > 0.001) throw new Error(`drift: ${h}`);
 
 console.log('ok');

@@ -372,7 +372,10 @@ pub fn run() {
             taskbar::init(&handle);
 
             // Discord rich presence — off unless the user opted in; parks on its channel until then.
-            let discord = discord::spawn(db.get_setting("discord_rpc").as_deref() == Some("true"));
+            let discord = discord::spawn(
+                db.get_setting("discord_rpc").as_deref() == Some("true"),
+                discord::RpcConfig::parse(db.get_setting("discord_rpc_config").as_deref()),
+            );
 
             // Last.fm scrobbler — parks until a session key exists (titlebar connect flow).
             let lastfm =

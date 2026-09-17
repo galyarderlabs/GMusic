@@ -1,40 +1,57 @@
-// Two kinds of theme live here, selected from one picker and persisted to localStorage (a pure UI
-// preference, no backend round-trip):
-//   - 'accent'  — overrides only --primary/--accent as inline styles on <html>, layered over the
-//                 app's default palette. Wins over both :root and .dark.
-//   - 'palette' — a full token set (background, card, sidebar, radius, …) for light AND dark, defined
-//                 as a `.theme-<id>` class in layout.css. Applied by toggling that class on <html>.
+// The theme presets, selected from one picker and persisted to localStorage (a pure UI preference,
+// no backend round-trip). Each is a full token set (background, card, sidebar, radius, …) for light
+// AND dark, defined as a `.theme-<id>` class in layout.css and applied by toggling that class on
+// <html>. 'default' is the exception: its tokens are the :root/.dark block itself, so `theme-default`
+// is on <html> with no rule behind it.
+//
+// There used to be a second kind, five accent presets that only overrode --primary/--accent. The
+// Primary Accent picker below does that with every colour instead of five, so they are gone (see
+// LEGACY_ACCENTS for what happens to a stored one).
 //
 // On top of whichever preset is selected sits the *custom* layer (accent colour, background tint,
-// roundness, fonts). It's inline styles too, applied after the preset, so it wins over both kinds
+// roundness, fonts). It's inline styles too, applied after the preset, so it wins over the class
 // and survives switching presets. Anything the user hasn't touched stays null and the preset shows
 // through — the customization is a set of overrides, not a rival theme to maintain.
 
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { hexToHsv, isLight, nearestHue } from './color';
+import { hexToHsv, isLight } from './color';
 import { artworkAccent, toAccent, warmAccent } from './artcolor';
 import { allowFontFile } from './api';
 
-export type ThemeId = 'rose' | 'blue' | 'lime' | 'purple' | 'teal' | 'catppuccin' | 'caffeine' | 'neon' | 'breeze' | 'glass';
+export type ThemeId =
+	| 'default'
+	| 'catppuccin'
+	| 'tokyonight'
+	| 'caffeine'
+	| 'neon'
+	| 'breeze'
+	| 'amoled'
+	| 'glass';
 
-// `fg` (accent themes only) is the text/icon colour that sits ON the accent: light accents (lime,
-// teal) need a dark foreground; dark accents keep the light one. `color` is just the picker swatch.
-type Theme =
-	| { id: ThemeId; label: string; kind: 'accent'; color: string; fg: string }
-	| { id: ThemeId; label: string; kind: 'palette'; color: string };
+// `color` is just the picker swatch.
+type Theme = { id: ThemeId; label: string; color: string };
 
 export const THEMES: Theme[] = [
-	{ id: 'rose', label: 'Rose', kind: 'accent', color: 'oklch(0.455 0.188 13.697)', fg: 'oklch(0.985 0 0)' },
-	{ id: 'blue', label: 'Blue', kind: 'accent', color: 'oklch(0.49 0.22 264)', fg: 'oklch(0.985 0 0)' },
-	{ id: 'lime', label: 'Lime', kind: 'accent', color: 'oklch(0.77 0.2 131)', fg: 'oklch(0.205 0 0)' },
-	{ id: 'purple', label: 'Purple', kind: 'accent', color: 'oklch(0.56 0.25 302)', fg: 'oklch(0.985 0 0)' },
-	{ id: 'teal', label: 'Teal', kind: 'accent', color: 'oklch(0.85 0.13 181)', fg: 'oklch(0.205 0 0)' },
-	{ id: 'catppuccin', label: 'Catppuccin', kind: 'palette', color: 'oklch(0.5547 0.2503 297.0156)' },
-	{ id: 'caffeine', label: 'Caffeine', kind: 'palette', color: 'oklch(0.4341 0.0392 41.9938)' },
-	{ id: 'neon', label: 'Neon', kind: 'palette', color: 'oklch(0.6726 0.2904 341.4084)' },
-	{ id: 'breeze', label: 'Breeze', kind: 'palette', color: 'oklch(0.7227 0.1920 149.5793)' },
-	{ id: 'glass', label: 'Glass', kind: 'palette', color: 'oklch(0.85 0.05 220)' }
+	{ id: 'default', label: 'Default', color: 'oklch(0.514 0.222 16.935)' },
+	{ id: 'catppuccin', label: 'Catppuccin', color: 'oklch(0.5547 0.2503 297.0156)' },
+	{ id: 'tokyonight', label: 'Tokyo Night', color: 'oklch(0.3593 0.0513 273.1802)' },
+	{ id: 'caffeine', label: 'Caffeine', color: 'oklch(0.4341 0.0392 41.9938)' },
+	{ id: 'neon', label: 'Neon', color: 'oklch(0.6726 0.2904 341.4084)' },
+	{ id: 'breeze', label: 'Breeze', color: 'oklch(0.7227 0.1920 149.5793)' },
+	{ id: 'amoled', label: 'AMOLED', color: 'oklch(0 0 0)' },
+	{ id: 'glass', label: 'Glass', color: 'oklch(0.85 0.05 220)' }
 ];
+
+// A removed accent preset falls back to the default palette, carrying its colour over as a custom
+// accent so someone who picked Blue stays blue. Rose was the default palette's own colour, so it
+// carries nothing over. Hex, because that is what the custom accent layer stores.
+const LEGACY_ACCENTS: Record<string, string | null> = {
+	rose: null,
+	blue: '#1a4eda',
+	lime: '#85cc23',
+	purple: '#9336ea',
+	teal: '#54e9d2'
+};
 
 /** Font stacks bundled with the app (imported in layout.css). "System" needs no download. */
 export const FONTS: { label: string; value: string }[] = [
@@ -61,17 +78,17 @@ export type Custom = {
 const KEY = 'primary-theme';
 const CUSTOM_KEY = 'custom-theme';
 const APPEARANCE_KEY = 'appearance';
-const PALETTE_CLASSES = THEMES.filter((t) => t.kind === 'palette').map((t) => `theme-${t.id}`);
-const ACCENT_VARS = ['--primary', '--primary-foreground', '--accent', '--accent-foreground'];
-/** Set on <html> while the artwork tint is live; the surface rules in layout.css hang off it. */
+const PALETTE_CLASSES = THEMES.map((t) => `theme-${t.id}`);
+/** Set on <html> while the artwork tint is live; the fill rules in layout.css hang off it. */
 const TINT_CLASS = 'art-tint';
+const ACCENT_VARS = ['--primary', '--primary-foreground', '--accent', '--accent-foreground'];
 const CUSTOM_VARS = ['--hue', '--radius', '--font-sans', '--font-heading'];
 // Same two neutrals the preset accent themes pick between.
 const ON_DARK = 'oklch(0.985 0 0)';
 const ON_LIGHT = 'oklch(0.205 0 0)';
 
 /** Reactive current selection, so the picker reflects it. */
-export const theme = $state<{ id: ThemeId }>({ id: 'rose' });
+export const theme = $state<{ id: ThemeId }>({ id: 'default' });
 export const custom = $state<Custom>({
 	accent: null,
 	hue: null,
@@ -171,19 +188,11 @@ function setAccentVars(color: string): void {
 function apply(): void {
 	const t = THEMES.find((x) => x.id === theme.id) ?? THEMES[0];
 	const root = document.documentElement;
-	// Reset every mechanism first, so switching between an accent and a palette (or clearing a
-	// custom override) never leaves the previous choice's inline vars or class behind.
+	// Reset first, so switching palettes (or clearing a custom override) never leaves the previous
+	// choice's inline vars or class behind.
 	[...ACCENT_VARS, ...CUSTOM_VARS, '--art-h'].forEach((v) => root.style.removeProperty(v));
 	root.classList.remove(...PALETTE_CLASSES, TINT_CLASS);
-
-	if (t.kind === 'accent') {
-		root.style.setProperty('--primary', t.color);
-		root.style.setProperty('--primary-foreground', t.fg);
-		root.style.setProperty('--accent', t.color);
-		root.style.setProperty('--accent-foreground', t.fg);
-	} else {
-		root.classList.add(`theme-${t.id}`);
-	}
+	root.classList.add(`theme-${t.id}`); // 'default' has no rule: :root/.dark are its tokens
 
 	if (custom.accent) setAccentVars(custom.accent);
 	// Last, so the artwork wins while it's on and the user's own theme is back the moment it isn't.
@@ -327,19 +336,16 @@ export function fontAvailable(name: string): boolean {
 // playing, and the next track overwrites it.
 //
 // Two things come out of one colour: the accent quartet (inline vars, as everywhere else) and
-// --art-h, the hue every surface in the `.art-tint` rules is derived from (layout.css).
+// --art-h, the hue the fill rules in layout.css are derived from.
 //
-// The crossfade between tracks is CSS, not JS: `--primary` and `--accent` are registered with
-// @property in layout.css, so setting them once starts an interpolation the engine owns. This used
-// to be a requestAnimationFrame loop, which meant ~36 style invalidations of the whole document,
-// driven from the main thread, landing exactly on the frames the track change was already paying
-// for. All that is left here is picking the target and keeping the hue continuous.
+// Only fills are tinted. Tinting text and borders too is what made the app unusable after a night
+// of playback (#217): a root custom property invalidates every element that inherits it, and
+// repainting every text run in a new colour cost ~20 MB per track change that WebKitGTK never gave
+// back. Measurements are in the `--- Artwork tint ---` comment in layout.css.
 //
-// --art-h is set the same way but is NOT transitioned: every surface is derived from it, so
-// animating it restyled the whole document once a frame and WebKitGTK kept ~26 MB of that per
-// track change, permanently. The numbers are in the `html.art-tint` comment in layout.css.
-// `nearestHue` stays because the value written here is unwrapped either way, and a future
-// crossfade would need it again.
+// The accent changes in one step. It used to crossfade (first a requestAnimationFrame loop, then a
+// CSS transition over @property-registered vars), and both spent whole-document restyles on a
+// decoration: see the comment where those registrations used to be in layout.css.
 
 let art: { h: number; hex: string } | null = null;
 let wanted = '';
@@ -399,13 +405,7 @@ export function applyArtworkAccent(url: string | undefined | null): void {
 		if (art?.hex === hex) return; // same colour (a repeat, or the queue moved under us)
 		const hsv = hexToHsv(hex);
 		if (!hsv) return;
-		// Continuous, never rewrapped: the CSS transition on --art-h is a plain number lerp, so the
-		// short way round the wheel has to be baked into the value it lands on. The first track has
-		// no previous target, so it starts from whatever --art-h currently resolves to.
-		const from =
-			art?.h ??
-			(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--art-h')) || 0);
-		art = { h: nearestHue(from, hsv.h), hex };
+		art = { h: hsv.h, hex };
 		restyle(); // through the normal path, so `effective` and the pickers agree
 	});
 }
@@ -420,10 +420,10 @@ export function prewarmArtworkAccent(url: string | undefined | null): void {
 	if (url) warmAccent(url);
 }
 
-/** Apply the stored theme + customization on startup (defaults to rose, no overrides). */
+/** Apply the stored theme + customization on startup (defaults to the default palette, no overrides). */
 export function initTheme(): void {
-	const stored = localStorage.getItem(KEY) as ThemeId | null;
-	theme.id = stored && THEMES.some((t) => t.id === stored) ? stored : 'rose';
+	const stored = localStorage.getItem(KEY);
+	theme.id = THEMES.some((t) => t.id === stored) ? (stored as ThemeId) : 'default';
 	try {
 		const saved = JSON.parse(localStorage.getItem(CUSTOM_KEY) ?? '{}');
 		// Only keys we know about, only the shape we expect: a hand-edited or older localStorage
@@ -439,6 +439,14 @@ export function initTheme(): void {
 		}
 	} catch {
 		// unparseable — start clean
+	}
+	if (stored && stored in LEGACY_ACCENTS) {
+		const hex = LEGACY_ACCENTS[stored];
+		if (hex && !custom.accent) {
+			custom.accent = hex;
+			persist();
+		}
+		localStorage.setItem(KEY, theme.id); // migrated once, not on every launch
 	}
 	try {
 		const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY) ?? '{}');

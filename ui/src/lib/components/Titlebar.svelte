@@ -29,7 +29,7 @@
 	import AccountMenu from './AccountMenu.svelte';
 	import { appIcon } from '$lib/appicon.svelte';
 	import * as api from '$lib/api';
-	import { openMiniPlayer, playback, toast, ui } from '$lib/player.svelte';
+	import { openMiniPlayer, playback, prefs, toast, ui } from '$lib/player.svelte';
 	import { win } from '$lib/win.svelte';
 	import { lt } from '$lib/lt.svelte';
 	import { anchorMenu, fitMenu, NO_ANCHOR } from '$lib/menu';
@@ -59,25 +59,24 @@
 	let anchor = $state(NO_ANCHOR);
 
 	// Discord Rich Presence — a plain on/off toggle of the `discord_rpc` setting (the backend
-	// connects/clears the presence the moment it flips). Optimistic; reverted on failure.
-	let discordOn = $state(false);
+	// connects/clears the presence the moment it flips). Optimistic; reverted on failure. The flag
+	// lives in `prefs` because the Discord settings tab toggles the same thing: a local copy here
+	// went stale the moment the other one was used.
+	const discordOn = $derived(prefs.discordRpc);
 
 	async function toggleDiscord() {
 		const next = !discordOn;
-		discordOn = next;
+		prefs.discordRpc = next;
 		try {
 			await api.setSetting('discord_rpc', next ? 'true' : 'false');
 			toast.success(next ? t('integrations.discord_on') : t('integrations.discord_off'));
 		} catch (e) {
-			discordOn = !next;
+			prefs.discordRpc = !next;
 			toast.error(String(e));
 		}
 	}
 
 	onMount(() => {
-		api.getSettings()
-			.then((s) => (discordOn = s.discord_rpc === 'true'))
-			.catch(() => {});
 		api.lastfmStatus()
 			.then((s) => {
 				connected = s.connected;

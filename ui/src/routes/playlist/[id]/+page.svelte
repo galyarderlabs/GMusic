@@ -25,6 +25,9 @@
 	import * as RadioGroup from '$lib/components/ui/radio-group';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import TrackRow from '$lib/components/TrackRow.svelte';
+	import TrackSelectionBar from '$lib/components/TrackSelectionBar.svelte';
+	import TrackSelectButton from '$lib/components/TrackSelectButton.svelte';
+	import { trackSelection } from '$lib/selection.svelte';
 	import EditPlaylistDialog from '$lib/components/EditPlaylistDialog.svelte';
 	import TrackFilter, { filterTracks } from '$lib/components/TrackFilter.svelte';
 	import TrackRowSkeleton from '$lib/components/TrackRowSkeleton.svelte';
@@ -211,7 +214,20 @@
 	// The rows actually on screen: the sorted list, narrowed by the header's filter box. Identical
 	// to `sortedItems` with no query typed.
 	const shown = $derived(filterTracks(sortedItems, applied));
+	const selection = trackSelection(() => sortedItems, () => shown,
+		() => `${auth.epoch}:${id}`, () => !pl?.continuation,
+		// A filter's matches are only the loaded ones, and typing one walks the list anyway, so the
+		// header count would be the wrong number to offer there.
+		() => (filtering ? undefined : headerCount), loadAll);
 	const filtering = $derived(!!applied.trim());
+	// The leading number of YouTube's own "190 tracks - 9+ hours", which is what the subtitle under
+	// the title shows until every page is in. An upper bound, not a count: it includes rows that
+	// never arrive (unavailable, region-blocked). A locale that doesn't lead with the number gives
+	// nothing back, and Select all falls back to the rows it has.
+	const headerCount = $derived.by(() => {
+		const digits = (pl?.subtitle ?? '').match(/^[\d.,]+/)?.[0].replace(/\D/g, '');
+		return digits ? Number(digits) : undefined;
+	});
 
 	// A sort has to cover the whole playlist, not the pages scrolled so far, so pull the rest in.
 	// Stops on a failed page (`moreError`), on navigation, and on any pass that made no progress.
@@ -543,11 +559,20 @@
 	// walk started for (`pid`) into its own `finally` means a stale walk can only ever clear its
 	// own marker, never a fresher walk's.
 	let walkingFor: string | null = null;
+	// The continuation a walk gave up on. `loadAll` stops when a page comes back on the same token,
+	// but the page it just appended re-runs this effect, and without this the walk would restart,
+	// re-fetch that page and append it again for as long as the filter or the pending selection
+	// holds. Tokens belong to one playlist, so navigating away needs no reset, and a successful
+	// Retry moves the token on and lets the walk continue.
+	let stalledAt: string | null = null;
 	$effect(() => {
-		if (!filtering || !pl?.continuation || walkingFor === id) return;
+		// Recover selected occurrences in the new server order before enabling bulk actions.
+		if ((!filtering && !selection.pending) || !pl?.continuation || walkingFor === id || moreError) return;
+		if (stalledAt === pl.continuation) return;
 		const pid = id;
 		walkingFor = pid;
-		loadAll().finally(() => {
+		loadAll().then((done) => {
+			stalledAt = done ? null : (pl?.continuation ?? null);
 			if (walkingFor === pid) walkingFor = null;
 		});
 	});
@@ -845,6 +870,10 @@
 									<HugeiconsIcon icon={MoreVerticalIcon} class="h-5 w-5 text-muted-foreground" />
 								</Button>
 							{/if}
+							<TrackSelectButton
+								{selection}
+								class="-ml-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition hover:bg-muted hover:text-foreground"
+							/>
 						</div>
 						<!-- Pushed to the far end of the header, away from the play controls. -->
 						<div class="flex items-center gap-1">
@@ -875,6 +904,7 @@
 					<TrackFilter bind:value={query} placeholder={t('common.search_this_playlist')} />
 				</div>
 			</div>
+			<TrackSelectionBar {selection} from={pl.title} />
 			<div
 				class="p-4 transition-opacity {resorting ? 'opacity-50' : ''}"
 				aria-busy={resorting}
@@ -884,12 +914,14 @@
 					     length of the whole playlist even though only ~30 rows exist.
 					     data-rows: what the scroller measures row 0's position from. -->
 					<div data-rows style="padding-top:{win.padTop}px;padding-bottom:{win.padBottom}px">
-						{#each shown.slice(win.start, win.end) as item, i (item.video_id + (win.start + i))}
+						{#each shown.slice(win.start, win.end) as item, i (JSON.stringify([item.video_id, win.start + i]))}
 							{@const n = win.start + i}
 							<!-- data-row: what the scroller measures a row's real height from. -->
 							<div data-row>
 								<TrackRow
 									song={item}
+									{selection}
+									selectionKey={selection.visibleKeys[n]}
 									index={n}
 									showPlayCount
 									active={item.video_id === nowId}

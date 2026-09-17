@@ -61,11 +61,20 @@ impl InnerTube {
     }
 
     /// Raw `search` POST. `params` = a filter (None = the mixed, unfiltered search). context/08.
+    ///
+    /// `record_history` decides whether the request carries the account at all. A signed-in
+    /// `search` is written to the account's YouTube search history, and the typeahead fires one
+    /// per debounce, so every half-typed prefix used to show up later in YouTube's and YTM's own
+    /// search box (#203). Only the query the user actually submitted passes `true`; a preview goes
+    /// out with no cookie and no `onBehalfOfUser`, which YouTube cannot attribute to anyone.
+    /// Nothing is lost by that: a search response carries no per-account field, not even
+    /// `likeStatus`, so the anonymous rows are the same rows minus personalised ranking.
     async fn search_raw(
         &self,
         client: &YouTubeClient,
         query: &str,
         params: Option<&str>,
+        record_history: bool,
     ) -> Result<serde_json::Value, Error> {
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
@@ -76,11 +85,15 @@ impl InnerTube {
             params: Option<String>,
         }
         let body = SearchBody {
-            context: self.context_for(client),
+            context: if record_history {
+                self.context_for(client)
+            } else {
+                self.context_anonymous(client)
+            },
             query: query.to_owned(),
             params: params.map(str::to_owned),
         };
-        self.post("search", client, &body, true).await
+        self.post("search", client, &body, /* set_login */ record_history).await
     }
 
     // --- "hide music videos" (user setting, off by default) ------------------------------------
@@ -121,8 +134,10 @@ impl InnerTube {
         &self,
         metadata_client: &YouTubeClient,
         query: &str,
+        record_history: bool,
     ) -> Result<SearchResult, Error> {
-        let value = self.search_raw(metadata_client, query, Some(FILTER_SONG)).await?;
+        let value =
+            self.search_raw(metadata_client, query, Some(FILTER_SONG), record_history).await?;
         let mut r = metadata::parse_search(&value);
         self.drop_video_songs(&mut r.items);
         Ok(r)
@@ -133,8 +148,9 @@ impl InnerTube {
         &self,
         client: &YouTubeClient,
         query: &str,
+        record_history: bool,
     ) -> Result<SearchResults, Error> {
-        let value = self.search_raw(client, query, None).await?;
+        let value = self.search_raw(client, query, None, record_history).await?;
         let mut r = browse::parse_search_all(&value);
         self.drop_video_cards(&mut r.top);
         self.drop_video_cards(&mut r.songs);
@@ -154,7 +170,8 @@ impl InnerTube {
             "playlists" => FILTER_COMMUNITY_PLAYLIST,
             other => return Err(Error::Other(format!("unknown search category: {other}"))),
         };
-        let value = self.search_raw(client, query, Some(filter)).await?;
+        // No history: "Show more" repeats the query the search page already recorded.
+        let value = self.search_raw(client, query, Some(filter), false).await?;
         Ok(browse::parse_search_cards(&value))
     }
 
@@ -583,7 +600,7 @@ impl InnerTube {
         query: &str,
         params: Option<&str>,
     ) -> Result<serde_json::Value, Error> {
-        self.search_raw(client, query, params).await
+        self.search_raw(client, query, params, false).await
     }
 
     #[cfg(feature = "integration-tests")]

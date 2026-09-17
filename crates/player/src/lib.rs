@@ -93,11 +93,23 @@ impl Player {
         mpv.set_property("demuxer-cache-dir", cache_dir)?;
         // The demuxer runs at mpv's browser-sized defaults otherwise: 150 MiB forward and 50 MiB
         // back, per open file, and the gapless lookahead keeps two open across every transition.
-        // This is audio only (`vid=no` above), so a whole 5-minute Opus track is about 4 MB and
-        // those ceilings only ever reserve headroom nothing uses. 32 MiB forward is several tracks
-        // of read-ahead; 8 MiB back is minutes of backward-seek without a refetch.
+        //
+        // Note what these bound. `cache-on-disk` is on above, and mpv's manual is explicit that in
+        // that mode the payload lives in the cache file and these limits apply to *packet
+        // metadata* only, "typically 50 MB per hour of media". So 32 MiB is not "several tracks of
+        // audio bytes", it is roughly 40 minutes of media before mpv starts pruning metadata. Fine
+        // for songs, and the ceiling an hour-long mix runs into.
         mpv.set_property("demuxer-max-bytes", 32 * 1024 * 1024_i64)?;
         mpv.set_property("demuxer-max-back-bytes", 8 * 1024 * 1024_i64)?;
+        // ffmpeg's HTTP reader retries nothing by default: one dropped connection, one transient
+        // error, and the track dies outright (mpv reports end-file with an error, which the app
+        // turns into a skip). Seeking in a long stream is where that bites, because a seek past
+        // the cached range opens a *fresh* request and gets no second chance. Issue #188.
+        mpv.set_property(
+            "stream-lavf-o",
+            "reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=5",
+        )?;
+        request_mpv_log(&mpv);
         let mpv = Arc::new(mpv);
 
         let (tx, rx) = unbounded_channel();
@@ -180,7 +192,18 @@ impl Player {
     }
 
     /// Absolute seek in seconds.
+    ///
+    /// Logged, with the end of mpv's cached range, because that one number splits the two kinds of
+    /// seek: inside the cache it is instant and never touches the network, past it mpv has to open
+    /// a *fresh* HTTP request for the new offset. A report that says "seeking hangs" is answered by
+    /// which of those it was, and nothing used to record it. Issue #188.
     pub fn seek(&self, position_secs: f64) -> Result<(), Error> {
+        // `demuxer-cache-time` is the *end* of the cached range, so this only catches a forward
+        // seek past it. A backward seek can need the network too (mpv prunes behind the reader);
+        // the mpv log is what says which, when `LIMUSIC_MPV_LOG` is on.
+        let cached_to = self.mpv.get_property::<f64>("demuxer-cache-time").ok();
+        let past_cache_end = cached_to.map_or(true, |c| position_secs > c);
+        tracing::info!(to = position_secs, cached_to, past_cache_end, "seek");
         self.mpv.command("seek", &[&position_secs.to_string(), "absolute"])?;
         Ok(())
     }
@@ -291,6 +314,39 @@ fn pitch_filter() -> &'static str {
     "rubberband"
 }
 
+/// The env var that turns mpv's own log on, and the level it is given. mpv's names, so: `no`,
+/// `fatal`, `error`, `warn`, `info`, `v`, `debug`, `trace`.
+const MPV_LOG_ENV: &str = "LIMUSIC_MPV_LOG";
+
+/// Ask mpv for its own log messages, which arrive as [`Event::LogMessage`] and are forwarded into
+/// `tracing` by [`event_loop`].
+///
+/// Deliberately not mpv's `log-file` option. The app's log is the one the diagnostics button
+/// collects *and redacts*, and an mpv log holds the full signed googlevideo URL; and a separate
+/// file cannot be read against the app's own lines, which is the whole question when a report says
+/// "it hung when I seeked". Interleaved and redacted beats complete and unpasteable.
+///
+/// `warn` by default: the levels that would answer a question like that (`v` shows demuxer seeks,
+/// HTTP opens and cache state) run to thousands of lines a minute and have no business in a
+/// shipped user's log file. Set [`MPV_LOG_ENV`] for a reproduction run.
+///
+/// Best-effort: a machine that can't turn the log on still plays music.
+fn request_mpv_log(mpv: &Mpv) -> bool {
+    let level = std::env::var(MPV_LOG_ENV).unwrap_or_else(|_| "warn".to_owned());
+    request_mpv_log_at(mpv, &level)
+}
+
+/// The half of [`request_mpv_log`] that doesn't read the environment, so a test can name a level.
+fn request_mpv_log_at(mpv: &Mpv, level: &str) -> bool {
+    let Ok(level_c) = std::ffi::CString::new(level) else { return false };
+    // SAFETY: `mpv.ctx` is the live handle, and mpv copies the level string during the call.
+    let rc = unsafe { libmpv2_sys::mpv_request_log_messages(mpv.ctx.as_ptr(), level_c.as_ptr()) };
+    if rc < 0 {
+        tracing::warn!(rc, level, "mpv refused this log level ({MPV_LOG_ENV})");
+    }
+    rc >= 0
+}
+
 fn event_loop(mut ev: EventContext, tx: tokio::sync::mpsc::UnboundedSender<PlayerEvent>) {
     // Playback state is derived from two properties, never polled: mpv answers `mpv_get_property`
     // synchronously on its core lock, so asking it from the app's async event pump can stall that
@@ -329,6 +385,24 @@ fn event_loop(mut ev: EventContext, tx: tokio::sync::mpsc::UnboundedSender<Playe
                         ..
                     } => {
                         idle = i;
+                        None
+                    }
+                    // mpv's own log, at whatever level `request_mpv_log` asked for. Its `prefix`
+                    // is the subsystem ("mkv", "ffmpeg/demuxer", "cplayer"), which is the part
+                    // that says where a stall is.
+                    Event::LogMessage { prefix, level, text, .. } => {
+                        let text = text.trim_end();
+                        // Everything below `warn` lands at `info`, not `debug`: the app's default
+                        // filter is `info`, so a `debug!` here would be silently dropped and
+                        // setting `LIMUSIC_MPV_LOG` would appear to do nothing. mpv only sends
+                        // these levels when that variable asked for them, so they are never noise.
+                        match level {
+                            "fatal" | "error" => {
+                                tracing::error!(target: "mpv", "[{prefix}] {text}")
+                            }
+                            "warn" => tracing::warn!(target: "mpv", "[{prefix}] {text}"),
+                            _ => tracing::info!(target: "mpv", "[{prefix}] {text}"),
+                        }
                         None
                     }
                     Event::EndFile(reason) => match reason as i32 {
@@ -425,6 +499,23 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let p = Player::new(dir.to_str().unwrap()).expect("libmpv");
         let af = || p.mpv.get_property::<String>("af").unwrap();
+
+        // `stream-lavf-o` is the one option here mpv could reject outright (it isn't a plain
+        // flag), and `new` is infallible-by-expect at the call site, so a rejection would be a
+        // panic on launch. Read it back: the reconnect settings are what keeps a seek in a long
+        // stream from killing the track.
+        let lavf = p.mpv.get_property::<String>("stream-lavf-o").unwrap();
+        assert!(lavf.contains("reconnect=1"), "reconnect options missing: {lavf}");
+        assert!(lavf.contains("reconnect_on_network_error=1"), "{lavf}");
+
+        // The mpv log request is a raw FFI call libmpv2 doesn't wrap, and the whole point of it is
+        // that someone reproducing a bug gets lines out of a shipped build. Check mpv takes the
+        // level a reproduction run would ask for, and that a wrong one is reported rather than
+        // silently doing nothing.
+        use super::request_mpv_log_at;
+        assert!(request_mpv_log_at(&p.mpv, "v"), "mpv refused the verbose log level");
+        assert!(request_mpv_log_at(&p.mpv, "warn"), "mpv refused the default log level");
+        assert!(!request_mpv_log_at(&p.mpv, "louder"), "a bogus level must not report success");
 
         // 1. Loudness normalization, then a pitch round trip. The gain has to survive both steps.
         p.set_gain(Some(-7.7)).unwrap();

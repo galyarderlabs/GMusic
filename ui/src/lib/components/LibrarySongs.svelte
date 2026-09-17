@@ -304,13 +304,14 @@
 		</div>
 	{:else if filtering}
 		<p class="text-sm text-muted-foreground">
-			No songs match “{query.trim()}”{token && !moreError ? ' yet, still loading' : ''}.
+			{t('library.no_tracks_match_loading', {
+				query: query.trim(),
+				loading: token && !moreError ? t('library.still_loading') : ''
+			})}
 		</p>
 	{:else}
 		<p class="text-sm text-muted-foreground">
-			{uploads
-				? t('library.no_uploads')
-				: 'No songs in your library yet. Hit the ⋯ on a song and save it, or like it, and it lands here.'}
+			{uploads ? t('library.no_uploads') : t('library.no_library_songs')}
 		</p>
 	{/if}
 

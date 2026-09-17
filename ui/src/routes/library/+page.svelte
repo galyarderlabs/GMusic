@@ -260,10 +260,7 @@
 		<Tabs.Content value="songs">
 			{#if tab === 'songs'}
 				{#if signedOut}
-					<p class="text-sm text-muted-foreground">
-						Sign in to see the songs saved in your YouTube Music library. Music on this machine is
-						in the Local tab.
-					</p>
+					<p class="text-sm text-muted-foreground">{t('library.songs_signed_out')}</p>
 				{:else}
 					<LibrarySongs />
 				{/if}
@@ -344,9 +341,7 @@
 				{#if tab === 'all'}
 					{@render grid(
 						all,
-						signedOut
-							? 'Nothing saved yet. Open a playlist or album and hit Save to library, or sign in for the one on your account.'
-							: 'Your library is empty.',
+						signedOut ? t('library.empty_signed_out') : t('library.empty'),
 						rvAll
 					)}
 				{/if}
@@ -355,7 +350,7 @@
 				{#if tab === 'playlists'}
 					{@render grid(
 						playlists,
-						'No playlists yet. Open one and hit Save to library to keep it here.',
+						t('library.no_saved_playlists'),
 						rvPlaylists
 					)}
 				{/if}
@@ -364,7 +359,7 @@
 				{#if tab === 'albums'}
 					{@render grid(
 						albums,
-						'No saved albums yet. Open an album and hit Save to library.',
+						t('library.no_saved_albums'),
 						rvAlbums
 					)}
 				{/if}
@@ -373,9 +368,7 @@
 				{#if tab === 'artists'}
 					{@render grid(
 						artists,
-						signedOut
-							? 'No artists yet. Save one from its page to keep it here.'
-							: 'No artists yet. They show up once you save their songs or albums.',
+						signedOut ? t('library.no_saved_artists') : t('library.no_artists'),
 						rvArtists
 					)}
 				{/if}

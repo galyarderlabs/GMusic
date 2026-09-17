@@ -183,8 +183,12 @@
 	{:else if lyrics?.instrumental}
 		<p class="py-8 text-center text-lg text-muted-foreground">{t('lyrics.instrumental')} ♪</p>
 	{:else if lyrics && lyrics.synced}
-		<!-- Padding lets the first/last lines center-scroll. -->
-		<div class="py-[35vh] {expanded ? 'mx-auto max-w-3xl' : ''}">
+		<!-- Bottom padding only, so the last lines can still center-scroll. A matching top padding
+		     would put half a panel of void above line 1, which is all you see until the song has
+		     played far enough to scroll past it (issue #201). Instead the opening lines sit at the
+		     top and centering starts once there is room above, the way every other lyrics view
+		     behaves. -->
+		<div class="pb-[55vh] {expanded ? 'mx-auto max-w-3xl' : ''}">
 			{#each lyrics.lines as line, i (i)}
 				{@const isActive = i === activeIndex}
 				{@const isPast = i < activeIndex}

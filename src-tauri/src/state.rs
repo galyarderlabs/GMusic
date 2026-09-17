@@ -324,6 +324,10 @@ impl QueueState {
     fn seek_to(&mut self, index: usize) {
         self.current = index;
         self.played_from = self.played_from.min(index);
+        // Every advance and every jump routes through here, which makes it the one place the
+        // one-retry marker can go stale. Without this it is "retried once, ever": a track that
+        // was retried in the morning gets no retry tonight.
+        self.retried = None;
     }
 }
 
@@ -973,7 +977,12 @@ impl AppState {
 
     /// `is_upload` comes off the queue row, never off `/player`: the response that has to be
     /// handled here (LOGIN_REQUIRED) carries no `videoDetails` to read it from. Issue #71.
-    async fn resolve(&self, video_id: &str, is_upload: bool) -> Result<PlaybackData, ResolveError> {
+    async fn resolve(
+        &self,
+        video_id: &str,
+        is_upload: bool,
+        duration_secs: i64,
+    ) -> Result<PlaybackData, ResolveError> {
         // A local file is its own "stream": no network, no cache, no extraction (local.rs).
         if let Some(path) = crate::local::song_path(video_id) {
             return crate::local::playback_data(video_id, path).map_err(|_| {
@@ -986,9 +995,15 @@ impl AppState {
             });
         }
         // Latency cache first (context/11) — honor expiry, never a source of truth.
-        // 60s safety margin: a URL that expires mid-load/mid-buffer fails as Raw(-13).
+        //
+        // The URL has to outlive the *track*, not just the load. googlevideo keeps serving a
+        // response it already started past `expire`, so a stale URL plays happily from the top;
+        // but every seek past the demuxer cache is a *new* request, and that one gets a 403. A
+        // flat 60s margin is plenty for a three-minute song and useless for an hour-long mix,
+        // which is why seeking in long videos died while short ones were fine. Issue #188.
+        // The cost of asking for more life than a row has is one resolve.
         let now = now_secs();
-        if let Some(c) = self.db.get_stream(video_id, now + 60) {
+        if let Some(c) = self.db.get_stream(video_id, cache_horizon(now, duration_secs)) {
             tracing::debug!(video_id, "stream url cache hit");
             // Cached URL carries no fresh metadata; the UI already has it from the queue item.
             return Ok(PlaybackData {
@@ -1623,13 +1638,27 @@ impl AppState {
                 tracing::warn!(video_id = %vid, "WEB_REMIX stream failed on GET — marking + evicting");
                 self.orchestrator.mark_web_remix_failed(&vid).await;
             }
-            // Retry once for WEB_REMIX-served and cache-served URLs. A failure from a fallback
-            // client, or a second failure of the same id, advances as before.
-            if (c == MAIN_CLIENT || c == "cache") && !already_retried {
+            // Retry once, whatever served it. This used to be WEB_REMIX and cache only, on the
+            // reasoning that a fallback client had already had its turn. That holds for a URL
+            // that was dead on arrival and not for one that dies an hour in: a direct client's
+            // URL can go bad mid-track (expiry, a seek's fresh request refused), and skipping
+            // straight to the next song is the "long mixes just drop" report. Issue #188.
+            // The `retried` marker is cleared on every queue pointer move, so this is once per
+            // play of a track, not once ever.
+            if !already_retried {
                 {
                     let mut q = self.queue.lock().await;
                     q.retried = Some(vid.clone());
-                    q.lookahead_loaded = None; // start_current's loadfile replaces mpv's playlist
+                    // start_current's loadfile replaces mpv's playlist
+                    q.lookahead_loaded = None;
+                    // Come back where the user was, not at 0. `q.duration` is mpv's own, reset to
+                    // 0 on every load, so it is also the proof that mpv really was playing *this*
+                    // file: on a gapless advance `latest_position` still holds the previous
+                    // track's until the next tick. `start_current` consumes this.
+                    let pos = self.current_position();
+                    if q.duration > 0.0 && pos > 1.0 && pos < q.duration {
+                        *self.pending_seek.lock().unwrap() = Some((vid.clone(), pos));
+                    }
                 }
                 tracing::info!(video_id = %vid, "retrying failed track via fallback clients");
                 let gen = self.generation.fetch_add(1, Ordering::SeqCst) + 1;
@@ -1654,7 +1683,13 @@ impl AppState {
                 return false; // user moved on
             }
             let Some(item) = self.current_item().await else { return false };
-            let resolved = self.resolve(&item.video_id, item.is_upload).await;
+            let resolved = self
+                .resolve(
+                    &item.video_id,
+                    item.is_upload,
+                    parse_duration_ms(item.duration.as_deref()) / 1000,
+                )
+                .await;
             // A resolve takes seconds; a skip during it bumps the generation. Re-check before
             // acting on the result: an abandoned failure would otherwise move `current` under the
             // track that's already playing and leave a stale error banner (nothing clears it, the
@@ -1805,14 +1840,19 @@ impl AppState {
                 }
                 next
             };
-            let (next_video, next_title, next_upload) = {
+            let (next_video, next_title, next_upload, next_secs) = {
                 let q = self.queue.lock().await;
                 match q.items.get(next_idx) {
-                    Some(item) => (item.video_id.clone(), item.title.clone(), item.is_upload),
+                    Some(item) => (
+                        item.video_id.clone(),
+                        item.title.clone(),
+                        item.is_upload,
+                        parse_duration_ms(item.duration.as_deref()) / 1000,
+                    ),
                     None => return,
                 }
             };
-            match self.resolve(&next_video, next_upload).await {
+            match self.resolve(&next_video, next_upload, next_secs).await {
                 Ok(d) => {
                     self.enqueue_lookahead(gen, next_idx, &next_video, d).await;
                     return;
@@ -2047,6 +2087,14 @@ impl AppState {
     pub fn set_discord_enabled(&self, on: bool) {
         if let Some(d) = &self.discord {
             d.set_enabled(on);
+        }
+    }
+
+    /// Apply the card layout from the settings tab (the `discord_rpc_config` blob). The presence
+    /// thread re-pushes at once, so the tab's preview and the real card stay in step.
+    pub fn set_discord_config(&self, json: &str) {
+        if let Some(d) = &self.discord {
+            d.set_config(crate::discord::RpcConfig::parse(Some(json)));
         }
     }
 
@@ -2696,7 +2744,7 @@ impl AppState {
         }
         // A Listen Together track is the host's; `Track` carries no upload flag and a guest could
         // not stream someone else's upload anyway.
-        let data = match self.resolve(&track.id, false).await {
+        let data = match self.resolve(&track.id, false, track.duration_ms / 1000).await {
             Ok(d) => d,
             Err(e) => {
                 self.emit_error(&track.id, &e.to_string());
@@ -3605,6 +3653,14 @@ fn shuffle_new_queue(items: &mut [SongItem], start: usize) -> usize {
     0
 }
 
+/// How much life a cached stream URL needs left before replaying it is worth it: the whole track,
+/// plus a minute for the load. Sizing this off the load alone is what broke seeking in hour-long
+/// videos (see the call site, issue #188). `duration_secs` is 0 when the queue row has no length,
+/// which degrades to the old behavior rather than refusing every cache hit.
+fn cache_horizon(now: i64, duration_secs: i64) -> i64 {
+    now + 60 + duration_secs.max(0)
+}
+
 /// Parse a `"m:ss"` / `"h:mm:ss"` duration string to ms (0 if absent/unparseable).
 fn parse_duration_ms(s: Option<&str>) -> i64 {
     let Some(s) = s else { return 0 };
@@ -3749,11 +3805,11 @@ fn persist_fingerprint(q: &QueueState) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_page, backfill_metadata, drop_duplicates, enqueue_at, format_duration, get_url,
-        guest_insert_index, history_threshold, is_mix, loudness_gain, merge_radio, next_index,
-        parse_duration_ms, persist_fingerprint, put_url, queue_fingerprint, radio_seed_for,
-        shuffle_new_queue, shuffle_upcoming, splice_radio_into, trim_played, unshuffled,
-        upcoming_queued, QueueState, RepeatMode, VideoUrls, KEEP_PLAYED,
+        append_page, backfill_metadata, cache_horizon, drop_duplicates, enqueue_at,
+        format_duration, get_url, guest_insert_index, history_threshold, is_mix, loudness_gain,
+        merge_radio, next_index, parse_duration_ms, persist_fingerprint, put_url,
+        queue_fingerprint, radio_seed_for, shuffle_new_queue, shuffle_upcoming, splice_radio_into,
+        trim_played, unshuffled, upcoming_queued, QueueState, RepeatMode, VideoUrls, KEEP_PLAYED,
     };
 
     /// The whole point of the video-URL map is answering a reopen without a round trip, so a live
@@ -4178,6 +4234,37 @@ mod tests {
         assert_eq!((q.played_from, q.current), (1, 3));
         q.seek_to(0); // back to the top: nothing is behind it any more
         assert_eq!((q.played_from, q.current), (0, 0));
+    }
+
+    // `on_track_failed` retries a track once and marks it. Without a reset that reads as "once,
+    // ever": the same song, played again tomorrow, would get no retry at all.
+    #[test]
+    fn moving_the_pointer_clears_the_one_retry_marker() {
+        let mut q = QueueState {
+            items: vec![song("a", None), song("b", None)],
+            current: 0,
+            retried: Some("a".into()),
+            ..QueueState::default()
+        };
+        q.seek_to(1);
+        assert_eq!(q.retried, None);
+    }
+
+    // A cached URL has to outlive the track, not just the load. googlevideo keeps serving a
+    // response it already started, so a stale URL plays from the top and dies on the first seek.
+    #[test]
+    fn a_cached_url_must_outlive_the_track_it_is_replayed_for() {
+        let now = 1_000;
+        let three_minutes = 180;
+        let an_hour = 3_847; // the mix from issue #188
+
+        // A row with ten minutes left: fine for a song, not for the mix.
+        let ten_minutes_left = now + 600;
+        assert!(ten_minutes_left > cache_horizon(now, three_minutes));
+        assert!(ten_minutes_left < cache_horizon(now, an_hour));
+
+        // Unknown length falls back to the old load-only margin rather than refusing everything.
+        assert_eq!(cache_horizon(now, 0), now + 60);
     }
 
     // The one that silently breaks: a duplicate sitting *before* the playing track. Removing it

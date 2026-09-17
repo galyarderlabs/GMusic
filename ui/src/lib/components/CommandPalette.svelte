@@ -67,6 +67,15 @@
 		if (!ui.paletteOpen) query = '';
 	});
 
+	// A modal opened off a row (right-click ▸ Add to playlist, Share) is a plain fixed layer in the
+	// layout at z-50, while this dialog portals to <body>: the z ties and DOM order decides, so the
+	// modal opens behind the palette. Raising its z wouldn't be enough either, since the dialog's
+	// focus trap pulls focus straight back out of the modal's filter field. So the palette steps
+	// aside rather than fighting for the layer. Issue #218.
+	$effect(() => {
+		if (ui.addSongs || ui.share) ui.paletteOpen = false;
+	});
+
 	async function load(q: string) {
 		loadedFor = q;
 		try {
@@ -104,6 +113,11 @@
 		// data-ctx: right-clicking a row opens that item's menu at the pointer (see `ctxHost`). The
 		// input keeps WebKit's own menu (`wantsNative`).
 		'data-ctx': '',
+		// Closing hands focus back to whatever held it before Ctrl+K, which would take it off the
+		// modal that just replaced the palette (see the effect above).
+		onCloseAutoFocus: (e: Event) => {
+			if (ui.addSongs || ui.share) e.preventDefault();
+		},
 		onInteractOutside: (e: PointerEvent) => {
 			if (inMenu(e)) e.preventDefault();
 		},
@@ -181,7 +195,7 @@
 			<Command.Group>
 				<Command.Item value="__all__" onSelect={allResults} class="gap-2 text-muted-foreground">
 					<HugeiconsIcon icon={Search01Icon} class="h-3.5 w-3.5" />
-					<span class="truncate">All results for “{query.trim()}”</span>
+					<span class="truncate">{t('common.all_results_for', { query: query.trim() })}</span>
 				</Command.Item>
 			</Command.Group>
 		{/if}

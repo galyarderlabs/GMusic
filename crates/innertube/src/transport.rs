@@ -263,6 +263,16 @@ impl InnerTube {
         client.to_context(&s.locale, s.visitor_data.as_deref(), dsid)
     }
 
+    /// A context with no account attached, for requests that must not be attributed to the user:
+    /// no `onBehalfOfUser`, and the caller passes `set_login = false` so no cookie goes with it.
+    pub(crate) fn context_anonymous(
+        &self,
+        client: &YouTubeClient,
+    ) -> crate::models::context::Context {
+        let s = self.session.read().unwrap();
+        client.to_context(&s.locale, s.visitor_data.as_deref(), None)
+    }
+
     /// Build a one-off authenticated context for identity validation without changing the shared
     /// session seen by concurrent browse/playback requests. The caller commits the id only after
     /// the validation response succeeds.
@@ -316,9 +326,17 @@ impl InnerTube {
                 }
                 // Signed in and Google says "no credential" (401) or "not for you" (403): the
                 // stored cookie has gone stale. Raw reqwest text here reads as a broken app and
-                // hands the user a URL instead of the one thing that fixes it.
+                // hands the user a URL instead of the one thing that fixes it. Only for a request
+                // that actually carried the cookie: a deliberately anonymous one (a search
+                // preview) is refused for its own reasons and says nothing about the session, and
+                // `headers` sends the cookie only for a client that supports login, so every
+                // anonymous stream client in the fallback chain would otherwise sign the user out
+                // on the 403 that made the orchestrator move to the next one.
                 Err(e)
-                    if self.is_logged_in() && e.status().is_some_and(|s| s == 401 || s == 403) =>
+                    if set_login
+                        && client.login_supported
+                        && self.is_logged_in()
+                        && e.status().is_some_and(|s| s == 401 || s == 403) =>
                 {
                     tracing::warn!(status = ?e.status(), "InnerTube {path} rejected the session");
                     return Err(self.reject_session());
@@ -581,6 +599,24 @@ mod tests {
 
         it.set_cookie(Some("SAPISID=secret".into()));
         assert_eq!(it.context_for(web).user.on_behalf_of_user.as_deref(), Some("abc123"));
+    }
+
+    #[test]
+    fn anonymous_context_carries_no_account() {
+        let clients = crate::clients::Clients::bundled();
+        let web = clients.get(crate::clients::METADATA_CLIENT).unwrap();
+        let session = Session {
+            cookie: Some("SAPISID=secret".into()),
+            data_sync_id: Some("abc123".into()),
+            visitor_data: Some("visitor".into()),
+            ..Default::default()
+        };
+        let it = InnerTube::new(session, None).unwrap();
+
+        // Signed in, yet `search` must stay unattributable (#203).
+        let ctx = it.context_anonymous(web);
+        assert_eq!(ctx.user.on_behalf_of_user, None);
+        assert_eq!(ctx.client.visitor_data.as_deref(), Some("visitor"), "still a session, no user");
     }
 
     #[test]

@@ -2867,7 +2867,7 @@ dependencies = [
 
 [[package]]
 name = "innertube"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "hex",
  "reqwest 0.12.28",
@@ -3235,12 +3235,13 @@ dependencies = [
 
 [[package]]
 name = "limusic-app"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "discord-rich-presence",
  "futures-util",
+ "gtk",
  "http-body-util",
  "hyper",
  "hyper-util",
@@ -3299,7 +3300,7 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "listen-protocol"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -4196,13 +4197,15 @@ checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "player"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "libc",
  "libmpv2",
+ "libmpv2-sys",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -5732,7 +5735,7 @@ dependencies = [
 
 [[package]]
 name = "sync-server"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "futures-util",
  "listen-protocol",

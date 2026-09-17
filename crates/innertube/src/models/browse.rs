@@ -575,7 +575,7 @@ fn list_item_to_browse_item(node: &Value) -> Option<BrowseItem> {
     // A song card's subtitle doubles as its artist string once it's played (and scrobbled), so it
     // carries the artist alone, never the "Song • … • 3:02" descriptor YouTube puts on the row.
     let runs = flex_runs(node, 1);
-    let subtitle = artists_from_runs(runs).or(subtitle);
+    let subtitle = artists_from_runs(runs);
     Some(BrowseItem {
         kind: "song",
         id: vid,
@@ -611,7 +611,7 @@ fn card_shelf_main(card: &Value) -> Option<BrowseItem> {
     {
         // Same as a song row: the top-result card's subtitle becomes the artist when it plays.
         let runs = card.get("subtitle").and_then(|s| s.get("runs")).and_then(Value::as_array);
-        let subtitle = artists_from_runs(runs).or(subtitle);
+        let subtitle = artists_from_runs(runs);
         return Some(BrowseItem {
             kind: "song",
             id: vid.to_owned(),
@@ -951,7 +951,7 @@ fn parse_two_row_item(node: &Value) -> Option<BrowseItem> {
         // "Miley Cyrus • Plastic Hearts • 2020" descriptor the card displays. Cards that navigate
         // keep the full subtitle below: there it is only ever text on screen.
         let runs = node.get("subtitle").and_then(|s| s.get("runs")).and_then(Value::as_array);
-        let subtitle = artists_from_runs(runs).or(subtitle);
+        let subtitle = artists_from_runs(runs);
         return Some(BrowseItem {
             kind: "song",
             id: vid.to_owned(),

@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import TrackRow from '$lib/components/TrackRow.svelte';
+	import TrackSelectionBar from '$lib/components/TrackSelectionBar.svelte';
+	import TrackSelectButton from '$lib/components/TrackSelectButton.svelte';
+	import { trackSelection } from '$lib/selection.svelte';
 	import TrackRowSkeleton from '$lib/components/TrackRowSkeleton.svelte';
 	import MediaCard from '$lib/components/MediaCard.svelte';
 	import MediaCardSkeleton from '$lib/components/MediaCardSkeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import * as api from '$lib/api';
 	import type { BrowseItem, SongItem } from '$lib/api';
-	import { openAddToPlaylist, playSong } from '$lib/player.svelte';
+	import { auth, openAddToPlaylist, playSong } from '$lib/player.svelte';
 	import { getCached, putCached } from '$lib/pagecache';
 	import { t } from '$lib/i18n.svelte';
 
@@ -20,6 +23,7 @@
 
 	const q = $derived(page.url.searchParams.get('q') ?? '');
 	const cat = $derived(page.url.searchParams.get('cat') ?? 'songs');
+	const selection = trackSelection(() => songs, () => songs, () => `${auth.epoch}:${q}:${cat}`);
 	const label = $derived(
 		{
 			songs: t('common.songs'),
@@ -70,8 +74,15 @@
 </script>
 
 <div class="p-6">
-	<h1 class="mb-1 font-heading text-2xl font-bold">{label}</h1>
-	<p class="mb-6 text-sm text-muted-foreground">{t('common.results_for', { query: q })}</p>
+	<div class="flex items-start justify-between gap-2">
+		<div>
+			<h1 class="mb-1 font-heading text-2xl font-bold">{label}</h1>
+			<p class="mb-6 text-sm text-muted-foreground">{t('common.results_for', { query: q })}</p>
+		</div>
+		{#if cat === 'songs'}
+			<TrackSelectButton {selection} />
+		{/if}
+	</div>
 
 	{#if loading}
 		{#if cat === 'songs'}
@@ -89,9 +100,12 @@
 		<ErrorState message={error} onRetry={() => load(q, cat)} />
 	{:else if cat === 'songs'}
 		<div class="content-in">
-			{#each songs as song (song.video_id)}
+			<TrackSelectionBar {selection} />
+			{#each songs as song, i (JSON.stringify([song.video_id, i]))}
 				<TrackRow
 					{song}
+					{selection}
+					selectionKey={selection.visibleKeys[i]}
 					showPlayCount
 					onplay={() => playSong(song)}
 					onAdd={() => openAddToPlaylist(song)}

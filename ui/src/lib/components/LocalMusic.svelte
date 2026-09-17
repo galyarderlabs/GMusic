@@ -107,11 +107,9 @@
 		<div class="mb-3 flex items-center justify-between gap-3">
 			<div class="min-w-0">
 				<div class="flex items-center gap-2 font-medium">
-					<HugeiconsIcon icon={DriveIcon} class="h-4 w-4" /> Folders
+					<HugeiconsIcon icon={DriveIcon} class="h-4 w-4" /> {t('local.folders')}
 				</div>
-				<p class="mt-0.5 text-xs text-muted-foreground">
-					Music in these folders plays without an internet connection.
-				</p>
+				<p class="mt-0.5 text-xs text-muted-foreground">{t('local.folders_hint')}</p>
 			</div>
 			<div class="flex shrink-0 gap-2">
 				<Button
@@ -147,9 +145,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="text-sm text-muted-foreground">
-				No folders yet. Add the one your music sits in and it shows up here.
-			</p>
+			<p class="text-sm text-muted-foreground">{t('local.no_folders')}</p>
 		{/if}
 	</div>
 
@@ -204,7 +200,7 @@
 							disabled={!songs.length}
 							onclick={() => playAll(false)}
 						>
-							<HugeiconsIcon icon={PlayIcon} class="h-4 w-4" /> Play all
+							<HugeiconsIcon icon={PlayIcon} class="h-4 w-4" /> {t('common.play_all')}
 						</Button>
 						<Button
 							size="sm"
@@ -213,7 +209,7 @@
 							disabled={!songs.length}
 							onclick={() => playAll(true)}
 						>
-							<HugeiconsIcon icon={ShuffleIcon} class="h-4 w-4" /> Shuffle
+							<HugeiconsIcon icon={ShuffleIcon} class="h-4 w-4" /> {t('common.shuffle')}
 						</Button>
 					</div>
 					<div class="content-in">
@@ -236,9 +232,6 @@
 			</Tabs.Content>
 		</Tabs.Root>
 	{:else if local.folders.length}
-		<p class="text-sm text-muted-foreground">
-			Nothing playable found in those folders yet. Looking for mp3, flac, m4a, aac, ogg, opus,
-			wav, wma, aiff, ape, wv and mka files.
-		</p>
+		<p class="text-sm text-muted-foreground">{t('local.nothing_playable')}</p>
 	{/if}
 </div>

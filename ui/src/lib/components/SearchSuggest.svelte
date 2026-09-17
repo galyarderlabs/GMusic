@@ -233,7 +233,7 @@
 							<span
 								class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-primary"
 							>
-								Top result
+								{t('common.top_result')}
 							</span>
 						{/if}
 					</div>
@@ -253,7 +253,7 @@
 				}}
 			>
 				<HugeiconsIcon icon={Search01Icon} class="h-3.5 w-3.5" />
-				All results for “{value.trim()}”
+				{t('common.all_results_for', { query: value.trim() })}
 			</button>
 		</div>
 	{/if}

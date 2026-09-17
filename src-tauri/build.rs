@@ -18,6 +18,9 @@ fn main() {
             }
         }
     }
+    // tauri-build watches tauri.conf.json but not the icons it embeds, so editing a PNG here
+    // leaves `generate_context!` emitting the old `default_window_icon` (window, tray, taskbar).
+    println!("cargo:rerun-if-changed=icons");
     if let Ok(v) = std::env::var("LASTFM_API_KEY") {
         println!("cargo:rustc-env=LASTFM_API_KEY={v}");
     }
