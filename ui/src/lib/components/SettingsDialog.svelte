@@ -1265,7 +1265,7 @@
 {/snippet}
 
 {#snippet kofiButton()}
-	<Button variant="secondary" size="sm" onclick={() => api.openExternal('https://ko-fi.com/simohypers')}>
+	<Button variant="secondary" size="sm" onclick={() => api.openExternal('https://ko-fi.com/muhamadgalihsaputra')}>
 		<HugeiconsIcon icon={Coffee02Icon} size={15} strokeWidth={1.8} />
 		{t('settings.about.kofi_button')}
 	</Button>
